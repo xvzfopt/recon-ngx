@@ -63,6 +63,14 @@ class Workspace:
 
         return config_data
 
+    def get_mod_time(self):
+        '''
+        Gets the Modification Time of this workspace
+
+        :return: The Modification Time of this workspace
+        :rtype: str
+        '''
+        return self.get_db().get_mod_time()
 
     def get_name(self):
         '''
@@ -81,6 +89,15 @@ class Workspace:
         :rtype: str
         '''
         return self._path
+
+    def get_db(self):
+        '''
+        Gets the database instance for this workspace
+
+        :return: The database instance for this workspace
+        :rtype: WorkspaceDB
+        '''
+        return self._db
 
     def get_db_path(self):
         '''
