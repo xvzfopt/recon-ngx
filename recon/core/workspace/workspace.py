@@ -2,6 +2,7 @@
 # Imports: External
 # =====================================================================================
 import os
+import json
 
 # =====================================================================================
 # Imports: Internal
@@ -37,6 +38,31 @@ class Workspace:
         self._name = name
         self._path = path
         self._db = db
+        self._config_data = {}
+
+        # Process Config
+        self._config_path = os.path.join(self._path, 'config.dat')
+        if os.path.isfile(self._config_path):
+            self._config_data = self._load_config(self._config_path)
+
+    def _load_config(self, path):
+        '''
+        Loads the specified Workspace configuration file
+
+        :param path: Path to the Workspace configuration file
+        :type path: str
+        '''
+        config_data = {}
+
+        # Read config data from file
+        with open(path, "r") as config_file:
+            try:
+                config_data = json.loads(config_file.read())
+            except ValueError:
+                pass
+
+        return config_data
+
 
     def get_name(self):
         '''
@@ -64,3 +90,12 @@ class Workspace:
         :rtype: str
         '''
         return self._db.get_path()
+
+    def get_config_data(self):
+        '''
+        Gets the config data for this workspace
+
+        :return: The Workspace config data
+        :rtype: dict
+        '''
+        return self._config_data
