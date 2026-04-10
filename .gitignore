@@ -1,5 +1,8 @@
 *.pyc
 *.rdb
-*sublime*
 venv/
 scripts/
+
+# IDE Files
+.idea/
+*sublime*
