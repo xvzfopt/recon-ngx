@@ -13,6 +13,7 @@ import string
 import subprocess
 import sys
 import traceback
+from .options import Options
 
 #=================================================
 # SUPPORT CLASSES
@@ -28,71 +29,6 @@ class Colors(object):
     G = '\033[32m' # green
     O = '\033[33m' # orange
     B = '\033[34m' # blue
-
-class Options(dict):
-
-    def __init__(self, *args, **kwargs):
-        self.required = {}
-        self.description = {}
-        super(Options, self).__init__(*args, **kwargs)
-
-    def __getitem__(self, name):
-        name = self.__keytransform__(name)
-        return super(Options, self).__getitem__(name)
-
-    def __setitem__(self, name, value):
-        name = self.__keytransform__(name)
-        value = self._autoconvert(value)
-        super(Options, self).__setitem__(name, value)
-
-    def __delitem__(self, name):
-        name = self.__keytransform__(name)
-        super(Options, self).__delitem__(name)
-        if name in self.required:
-            del self.required[name]
-        if name in self.description:
-            del self.description[name]
-
-    def __keytransform__(self, key):
-        return key.upper()
-
-    def _boolify(self, value):
-        # designed to throw an exception if value is not a string representation of a boolean
-        return {'true':True, 'false':False}[value.lower()]
-
-    def _autoconvert(self, value):
-        if value in (None, True, False):
-            return value
-        elif (isinstance(value, str)) and value.lower() in ('none', "''", '""'):
-            return None
-        orig = value
-        for fn in (self._boolify, int, float):
-            try:
-                value = fn(value)
-                break
-            except ValueError: pass
-            except KeyError: pass
-            except AttributeError: pass
-        if type(value) is int and '.' in str(orig):
-            return float(orig)
-        return value
-
-    def init_option(self, name, value=None, required=False, description=''):
-        name = self.__keytransform__(name)
-        self[name] = value
-        self.required[name] = required
-        self.description[name] = description
-
-    def serialize(self):
-        options = []
-        for key in self:
-            option = {}
-            option['name'] = key
-            option['value'] = self[key]
-            option['required'] = self.required[key]
-            option['description'] = self.description[key]
-            options.append(option)
-        return options
 
 #=================================================
 # FRAMEWORK CLASS
@@ -128,6 +64,7 @@ class Framework(cmd.Cmd):
         self.do_help.__func__.__doc__ = '''Displays this menu'''
         self.doc_header = 'Commands (type [help|?] <topic>):'
         self._exit = 0
+        self._workspace_obj = None
 
     #==================================================
     # CMD OVERRIDE METHODS
@@ -225,9 +162,6 @@ class Framework(cmd.Cmd):
             if re.match(hashitem['pattern'], hashstr):
                 return hashitem['type']
         return False
-
-    def get_random_str(self, length):
-        return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
     def _is_writeable(self, filename):
         try:
@@ -690,24 +624,11 @@ class Framework(cmd.Cmd):
             print('')
 
     def _load_config(self):
-        config_path = os.path.join(self.workspace, 'config.dat')
-        # don't bother loading if a config file doesn't exist
-        if os.path.exists(config_path):
-            # retrieve saved config data
-            with open(config_path) as config_file:
-                try:
-                    config_data = json.loads(config_file.read())
-                except ValueError:
-                    # file is corrupt, nothing to load, exit gracefully
-                    pass
-                else:
-                    # set option values
-                    for key in self.options:
-                        try:
-                            self.options[key] = config_data[self._modulename][key]
-                        except KeyError:
-                            # invalid key, contnue to load valid keys
-                            continue
+        if self._workspace_obj:
+            workspace_config = self._workspace_obj.get_config_data()
+            for key in self.options:
+                if key in workspace_config:
+                    self.options[key] = workspace_config[self._modulename][key]
 
     def _save_config(self, name, module=None, options=None):
         config_path = os.path.join(self.workspace, 'config.dat')
