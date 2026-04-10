@@ -23,6 +23,7 @@ import builtins
 from recon.core.workspace import WorkspaceManager
 from recon.core import framework
 from recon.core.constants import BANNER, BANNER_SMALL
+from recon.core.workspace.workspace import Workspace
 
 # set the __version__ variable based on the VERSION file
 exec(open(os.path.join(Path(os.path.abspath(__file__)).parents[2], 'VERSION')).read())
@@ -201,9 +202,11 @@ class Recon(framework.Framework):
         if not name:
             return
 
+        # Create Workspace
         if not self._wm.workspace_exists(name):
             self._workspace_obj = self._wm.create_workspace(name)
             self.workspace = framework.Framework.workspace = self._workspace_obj.get_path()
+        # Load Existing Workspace
         else:
             self._workspace_obj = self._wm.get_workspace(name)
             self.workspace = framework.Framework.workspace = self._workspace_obj.get_path()
@@ -531,9 +534,7 @@ class Recon(framework.Framework):
         '''Lists existing workspaces'''
         rows = []
         for workspace in self._wm.get_workspaces():
-            db_path = workspace.get_db_path()
-            modified = datetime.fromtimestamp(os.path.getmtime(db_path)).strftime('%Y-%m-%d %H:%M:%S')
-            rows.append((workspace.get_name(), modified))
+            rows.append((workspace.get_name(), workspace.get_mod_time()))
         rows.sort(key=lambda x: x[0])
         self.table(rows, header=['Workspaces', 'Modified'])
 
