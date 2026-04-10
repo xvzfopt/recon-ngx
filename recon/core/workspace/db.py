@@ -11,6 +11,7 @@ from contextlib import closing
 # =====================================================================================
 from recon.utils import utils
 
+
 # =====================================================================================
 # Workspace Database Class
 # =====================================================================================
@@ -26,7 +27,7 @@ class WorkspaceDB:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, path):
+    def __init__(self, path, output):
         '''
         Constructor
 
@@ -34,6 +35,7 @@ class WorkspaceDB:
         :type path: str
         '''
         self._path = path
+        self._output = output
 
         # Perform DB Setup/Migration
         if not self.db_exists():
@@ -94,15 +96,12 @@ class WorkspaceDB:
 
         Queries the database and returns the results as a list.
         '''
-        # self.debug(f"DATABASE => {path}")
-        # self.debug(f"QUERY => {query}")
-        print(f"DATABASE => {path}")
-        print(f"QUERY => {query}")
+        self._output.debug(f"DATABASE => {path}")
+        self._output.debug(f"QUERY => {query}")
         with sqlite3.connect(path) as conn:
             with closing(conn.cursor()) as cur:
                 if values:
-                    # self.debug(f"VALUES => {repr(values)}")
-                    print(f"VALUES => {repr(values)}")
+                    self._output.debug(f"VALUES => {repr(values)}")
                     cur.execute(query, values)
                 else:
                     cur.execute(query)

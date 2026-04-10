@@ -25,7 +25,7 @@ class WorkspaceManager:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, spaces_path):
+    def __init__(self, spaces_path, output):
         '''
         Constructor
 
@@ -33,6 +33,7 @@ class WorkspaceManager:
         :type spaces_path: str
         '''
         self._spaces_path = spaces_path
+        self._output = output
 
     def create_workspace(self, name):
         '''
@@ -49,7 +50,7 @@ class WorkspaceManager:
         os.makedirs(wpath)
 
         # Initialise Database
-        db = WorkspaceDB(os.path.join(wpath, "data.db"))
+        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output)
 
         # Initialise Workspace
         workspace = Workspace(name, wpath, db)
@@ -84,7 +85,7 @@ class WorkspaceManager:
         wpath = os.path.join(self._spaces_path, name)
 
         # Initialise Database
-        db = WorkspaceDB(os.path.join(wpath, "data.db"))
+        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output)
 
         # Initialise Workspace
         workspace = Workspace(name, wpath, db)
