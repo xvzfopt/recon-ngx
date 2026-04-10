@@ -3,6 +3,7 @@
 # =====================================================================================
 import os
 import sqlite3
+from datetime import datetime
 from contextlib import closing
 
 # =====================================================================================
@@ -40,15 +41,6 @@ class WorkspaceDB:
         else:
             self.migrate()
 
-    def get_path(self):
-        '''
-        Gets the path to the Database file
-
-        :return: path to the database file
-        :rtype: str
-        '''
-        return self._path
-
     def create(self):
         '''
         Creates and sets up the Workspace database
@@ -72,6 +64,26 @@ class WorkspaceDB:
 
     def query(self, *args, **kwargs):
         return self._query(self._path, *args, **kwargs)
+
+    def get_path(self):
+        '''
+        Gets the path to the Database file
+
+        :return: path to the database file
+        :rtype: str
+        '''
+        return self._path
+
+    def get_mod_time(self):
+        '''
+        Gets the Modification time of the Database
+
+        :return: The Modification Time of this workspace
+        :rtype: str
+        '''
+        return datetime.fromtimestamp(
+            os.path.getmtime(self._path)
+        ).strftime('%Y-%m-%d %H:%M:%S')
 
     # =====================================================================================
     # Internal Functions
