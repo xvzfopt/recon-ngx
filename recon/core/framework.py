@@ -4,31 +4,15 @@ import codecs
 import inspect
 import json
 import os
-import random
 import re
 import requests
-import socket
 import sqlite3
-import string
 import subprocess
 import sys
-import traceback
+from recon.core.output import ConsoleOutput
+from recon.core.exceptions import *
 from .options import Options
-
-#=================================================
-# SUPPORT CLASSES
-#=================================================
-
-class FrameworkException(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-
-class Colors(object):
-    N = '\033[m' # native
-    R = '\033[31m' # red
-    G = '\033[32m' # green
-    O = '\033[33m' # orange
-    B = '\033[34m' # blue
+from ..utils import utils
 
 #=================================================
 # FRAMEWORK CLASS
@@ -54,24 +38,27 @@ class Framework(cmd.Cmd):
     _spool = None
     _summary_counts = {}
 
-    def __init__(self, params):
+    def __init__(self, params, version=None, author=None):
         cmd.Cmd.__init__(self)
+        self._version = version
+        self._author = author
         self._modulename = params
         self.ruler = '-'
         self.spacer = '  '
         self.time_format = '%Y-%m-%d %H:%M:%S'
-        self.nohelp = f"{Colors.R}[!] No help on %s{Colors.N}"
         self.do_help.__func__.__doc__ = '''Displays this menu'''
         self.doc_header = 'Commands (type [help|?] <topic>):'
         self._exit = 0
         self._workspace_obj = None
+        self.console = ConsoleOutput(self._global_options)
+        self.nohelp = f"{ConsoleOutput.COLOR_R}[!] No help on %s{ConsoleOutput.COLOR_N}"
 
     #==================================================
     # CMD OVERRIDE METHODS
     #==================================================
 
     def default(self, line):
-        self.error(f"Invalid command: {line}")
+        self.console.error(f"Invalid command: {line}")
 
     def emptyline(self):
         # disables running of last command when no command is given
@@ -116,7 +103,7 @@ class Framework(cmd.Cmd):
             try:
                 return func(arg)
             except Exception:
-                self.print_exception()
+                self.console.print_exception()
 
     # make help menu more attractive
     def print_topics(self, header, cmds, cmdlen, maxcol):
@@ -131,20 +118,6 @@ class Framework(cmd.Cmd):
     #==================================================
     # SUPPORT METHODS
     #==================================================
-
-    def to_unicode_str(self, obj, encoding='utf-8'):
-        # converts non-stringish types to unicode
-        if type(obj) not in (str, bytes):
-            obj = str(obj)
-        obj = self.to_unicode(obj, encoding)
-        return obj
-
-    def to_unicode(self, obj, encoding='utf-8'):
-        # converts bytes to unicode
-        if isinstance(obj, bytes):
-            obj = obj.decode(encoding)
-        return obj
-
     def is_hash(self, hashstr):
         hashdict = [
             {'pattern': r'^[a-fA-F0-9]{32}$', 'type': 'MD5'},
@@ -187,108 +160,6 @@ class Framework(cmd.Cmd):
         return sorted(list(set(xploded)))
 
     #==================================================
-    # OUTPUT METHODS
-    #==================================================
-
-    def print_exception(self, line=''):
-        stack_list = [x.strip() for x in traceback.format_exc().strip().splitlines()]
-        exctype = stack_list[-1].split(':', 1)[0].strip()
-        message = stack_list[-1].split(':', 1)[-1].strip()
-        if self._global_options['verbosity'] == 0:
-            return
-        elif self._global_options['verbosity'] == 1:
-            line = ' '.join([x for x in [message, line] if x])
-            self.error(line)
-        elif self._global_options['verbosity'] == 2:
-            print(f"{Colors.R}{'-'*60}")
-            traceback.print_exc()
-            print(f"{'-'*60}{Colors.N}")
-
-    def error(self, line):
-        '''Formats and presents errors.'''
-        if not re.search('[.,;!?]$', line):
-            line += '.'
-        line = line[:1].upper() + line[1:]
-        print(f"{Colors.R}[!] {line}{Colors.N}")
-
-    def output(self, line):
-        '''Formats and presents normal output.'''
-        print(f"{Colors.B}[*]{Colors.N} {line}")
-
-    def alert(self, line):
-        '''Formats and presents important output.'''
-        print(f"{Colors.G}[*]{Colors.N} {line}")
-
-    def verbose(self, line):
-        '''Formats and presents output if in verbose mode.'''
-        if self._global_options['verbosity'] >= 1:
-            self.output(line)
-
-    def debug(self, line):
-        '''Formats and presents output if in debug mode (very verbose).'''
-        if self._global_options['verbosity'] >= 2:
-            self.output(line)
-
-    def heading(self, line, level=1):
-        '''Formats and presents styled header text'''
-        line = line
-        print('')
-        if level == 0:
-            print(self.ruler*len(line))
-            print(line.upper())
-            print(self.ruler*len(line))
-        if level == 1:
-            print(f"{self.spacer}{line.title()}")
-            print(f"{self.spacer}{self.ruler*len(line)}")
-
-    def table(self, data, header=[], title=''):
-        '''Accepts a list of rows and outputs a table.'''
-        tdata = list(data)
-        if header:
-            tdata.insert(0, header)
-        if len(set([len(x) for x in tdata])) > 1:
-            raise FrameworkException('Row lengths not consistent.')
-        lens = []
-        cols = len(tdata[0])
-        # create a list of max widths for each column
-        for i in range(0,cols):
-            lens.append(len(max([self.to_unicode_str(x[i]) if x[i] != None else '' for x in tdata], key=len)))
-        # calculate dynamic widths based on the title
-        title_len = len(title)
-        tdata_len = sum(lens) + (3*(cols-1))
-        diff = title_len - tdata_len
-        if diff > 0:
-            diff_per = diff / cols
-            lens = [x+diff_per for x in lens]
-            diff_mod = diff % cols
-            for x in range(0, diff_mod):
-                lens[x] += 1
-        # build ascii table
-        if len(tdata) > 0:
-            separator_str = f"{self.spacer}+-{'%s---'*(cols-1)}%s-+"
-            separator_sub = tuple(['-'*x for x in lens])
-            separator = separator_str % separator_sub
-            data_str = f"{self.spacer}| {'%s | '*(cols-1)}%s |"
-            # top of ascii table
-            print('')
-            print(separator)
-            # ascii table data
-            if title:
-                print(f"{self.spacer}| {title.center(tdata_len)} |")
-                print(separator)
-            if header:
-                rdata = tdata.pop(0)
-                data_sub = tuple([rdata[i].center(lens[i]) for i in range(0,cols)])
-                print(data_str % data_sub)
-                print(separator)
-            for rdata in tdata:
-                data_sub = tuple([self.to_unicode_str(rdata[i]).ljust(lens[i]) if rdata[i] != None else ''.ljust(lens[i]) for i in range(0,cols)])
-                print(data_str % data_sub)
-            # bottom of ascii table
-            print(separator)
-            print('')
-
-    #==================================================
     # DATABASE METHODS
     #==================================================
 
@@ -298,12 +169,12 @@ class Framework(cmd.Cmd):
 
     def _query(self, path, query, values=(), include_header=False):
         '''Queries the database and returns the results as a list.'''
-        self.debug(f"DATABASE => {path}")
-        self.debug(f"QUERY => {query}")
+        self.console.debug(f"DATABASE => {path}")
+        self.console.debug(f"QUERY => {query}")
         with sqlite3.connect(path) as conn:
             with closing(conn.cursor()) as cur:
                 if values:
-                    self.debug(f"VALUES => {repr(values)}")
+                    self.console.debug(f"VALUES => {repr(values)}")
                     cur.execute(query, values)
                 else:
                     cur.execute(query)
@@ -331,7 +202,7 @@ class Framework(cmd.Cmd):
     #==================================================
 
     def _display(self, data, rowcount):
-        display = self.alert if rowcount else self.verbose
+        display = self.console.alert if rowcount else self.console.verbose
         for key in sorted(data.keys()):
             display(f"{key.title()}: {data[key]}")
         display(self.ruler*50)
@@ -559,7 +430,7 @@ class Framework(cmd.Cmd):
             return 0
         # convert any type to unicode (str) for external processing
         for column in columns:
-            data[column] = self.to_unicode_str(data[column])
+            data[column] = utils.to_unicode_str(data[column])
 
         # build the insert query
         columns_str = '`, `'.join(columns)
@@ -607,7 +478,7 @@ class Framework(cmd.Cmd):
             pattern = f"{self.spacer}%s  %s  %s  %s"
             key_len = len(max(options, key=len))
             if key_len < 4: key_len = 4
-            val_len = len(max([self.to_unicode_str(options[x]) for x in options], key=len))
+            val_len = len(max([utils.to_unicode_str(options[x]) for x in options], key=len))
             if val_len < 13: val_len = 13
             print('')
             print(pattern % ('Name'.ljust(key_len), 'Current Value'.ljust(val_len), 'Required', 'Description'))
@@ -616,7 +487,7 @@ class Framework(cmd.Cmd):
                 value = options[key] if options[key] != None else ''
                 reqd = 'no' if options.required[key] is False else 'yes'
                 desc = options.description[key]
-                print(pattern % (key.ljust(key_len), self.to_unicode_str(value).ljust(val_len), self.to_unicode_str(reqd).ljust(8), desc))
+                print(pattern % (key.ljust(key_len), utils.to_unicode_str(value).ljust(val_len), utils.to_unicode_str(reqd).ljust(8), desc))
             print('')
         else:
             print('')
@@ -693,7 +564,7 @@ class Framework(cmd.Cmd):
         for key in sorted(keys):
             tdata.append(key)
         if tdata:
-            self.table(tdata, header=['Name', 'Value'])
+            self.console.table(tdata, header=['Name', 'Value'])
 
     def _get_key_names(self):
         return [x[0] for x in self._query_keys('SELECT name FROM keys')]
@@ -703,7 +574,7 @@ class Framework(cmd.Cmd):
     #==================================================
 
     def _print_prepared_request(self, prepared):
-        self.debug(f"{'='*25} REQUEST {'='*25}")
+        self.console.debug(f"{'='*25} REQUEST {'='*25}")
         print(f"url:    {prepared.url}")
         print(f"method: {prepared.method} {prepared.path_url}")
         for k, v in prepared.headers.items():
@@ -712,7 +583,7 @@ class Framework(cmd.Cmd):
             print(f"body: {prepared.body}")
 
     def _print_response(self, resp):
-        self.debug(f"{'='*25} RESPONSE {'='*25}")
+        self.console.debug(f"{'='*25} RESPONSE {'='*25}")
         print(f"status: {resp.status_code} {resp.reason}")
         for k, v in resp.headers.items():
             print(f"header: {k}: {v}")
@@ -771,12 +642,12 @@ class Framework(cmd.Cmd):
                 if category != last_category:
                     # print header
                     last_category = category
-                    self.heading(last_category)
+                    self.console.heading(last_category)
                 # print module
                 print(f"{self.spacer*2}{module}")
         else:
             print('')
-            self.alert('No modules enabled/installed.')
+            self.console.alert('No modules enabled/installed.')
         print('')
 
     #==================================================
@@ -844,7 +715,7 @@ class Framework(cmd.Cmd):
             print(f"{name} => {value}")
             self._save_config(name)
         else:
-            self.error('Invalid option name.')
+            self.console.error('Invalid option name.')
 
     def _do_options_unset(self, params):
         '''Unsets a current context option'''
@@ -856,7 +727,7 @@ class Framework(cmd.Cmd):
         if name in self.options:
             self._do_options_set(' '.join([name, 'None']))
         else:
-            self.error('Invalid option name.')
+            self.console.error('Invalid option name.')
 
     def do_keys(self, params):
         '''Manages third party resource credentials'''
@@ -880,7 +751,7 @@ class Framework(cmd.Cmd):
             self._help_keys_add()
             return
         if self.add_key(key, value):
-            self.output(f"Key '{key}' added.")
+            self.console.output(f"Key '{key}' added.")
 
     def _do_keys_remove(self, params):
         '''Removes a third party resource credential'''
@@ -890,9 +761,9 @@ class Framework(cmd.Cmd):
             return
         if self.get_key(key):
             if self.remove_key(key):
-                self.output(f"Key '{key}' removed.")
+                self.console.output(f"Key '{key}' removed.")
         else:
-            self.error('Invalid key name.')
+            self.console.error('Invalid key name.')
 
     def do_modules(self, params):
         '''Interfaces with installed modules'''
@@ -909,12 +780,12 @@ class Framework(cmd.Cmd):
         '''Searches installed modules'''
         modules = [x for x in Framework._loaded_modules]
         if params:
-            self.output(f"Searching installed modules for '{params}'...")
+            self.console.output(f"Searching installed modules for '{params}'...")
             modules = [x for x in Framework._loaded_modules if re.search(params, x)]
         if modules:
             self._list_modules(modules)
         else:
-            self.error('No modules found.')
+            self.console.error('No modules found.')
             self._help_modules_search()
 
     def _do_modules_load(self, params):
@@ -974,9 +845,9 @@ class Framework(cmd.Cmd):
             count = 0
             for rowid in rowids:
                 count += self.query(f"UPDATE `{table}` SET notes=? WHERE ROWID IS ?", (note, rowid))
-            self.output(f"{count} rows affected.")
+            self.console.output(f"{count} rows affected.")
         else:
-            self.output('Invalid table name.')
+            self.console.output('Invalid table name.')
 
     def _do_db_insert(self, params):
         '''Inserts a row into the database'''
@@ -987,7 +858,7 @@ class Framework(cmd.Cmd):
         if table in self.get_tables():
             # validate insert_* method for table
             if not hasattr(self, 'insert_' + table):
-                self.error('Cannot add records to dynamically created tables.')
+                self.console.error('Cannot add records to dynamically created tables.')
                 return
             columns = [x for x in self.get_columns(table) if x[0] != 'module']
             # sanitize column names to avoid conflicts with builtins in insert_* method
@@ -1003,7 +874,7 @@ class Framework(cmd.Cmd):
                     for i in range(0,len(columns)):
                         record[sanitize_column(columns[i][0])] = values[i]
                 else:
-                    self.error('Columns and values length mismatch.')
+                    self.console.error('Columns and values length mismatch.')
                     return
             # build record from interactive input
             else:
@@ -1022,9 +893,9 @@ class Framework(cmd.Cmd):
             # add record to the database
             func = getattr(self, 'insert_' + table)
             count = func(mute=True, **record)
-            self.output(f"{count} rows affected.")
+            self.console.output(f"{count} rows affected.")
         else:
-            self.output('Invalid table name.')
+            self.console.output('Invalid table name.')
 
     def _do_db_delete(self, params):
         '''Deletes a row from the database'''
@@ -1053,9 +924,9 @@ class Framework(cmd.Cmd):
             count = 0
             for rowid in rowids:
                 count += self.query(f"DELETE FROM `{table}` WHERE ROWID IS ?", (rowid,))
-            self.output(f"{count} rows affected.")
+            self.console.output(f"{count} rows affected.")
         else:
-            self.output('Invalid table name.')
+            self.console.output('Invalid table name.')
 
     def _do_db_query(self, params):
         '''Queries the database with custom SQL'''
@@ -1065,24 +936,24 @@ class Framework(cmd.Cmd):
         try:
             results = self.query(params, include_header=True)
         except sqlite3.OperationalError as e:
-            self.error(f"Invalid query. {type(e).__name__} {e}")
+            self.console.error(f"Invalid query. {type(e).__name__} {e}")
             return
         if type(results) == list:
             header = results.pop(0)
             if not results:
-                self.output('No data returned.')
+                self.console.output('No data returned.')
             else:
-                self.table(results, header=header)
-                self.output(f"{len(results)} rows returned")
+                self.console.table(results, header=header)
+                self.console.output(f"{len(results)} rows returned")
         else:
-            self.output(f"{results} rows affected.")
+            self.console.output(f"{results} rows affected.")
 
     def _do_db_schema(self, params):
         '''Displays the database schema'''
         tables = self.get_tables()
         for table in tables:
             columns = self.get_columns(table)
-            self.table(columns, title=table)
+            self.console.table(columns, title=table)
 
     def do_script(self, params):
         '''Records and executes command scripts'''
@@ -1103,25 +974,25 @@ class Framework(cmd.Cmd):
                 self._help_script_record()
                 return
             if not self._is_writeable(filename):
-                self.output(f"Cannot record commands to '{filename}'.")
+                self.console.output(f"Cannot record commands to '{filename}'.")
             else:
                 Framework._record = filename
-                self.output(f"Recording commands to '{Framework._record}'.")
+                self.console.output(f"Recording commands to '{Framework._record}'.")
         else:
-            self.output('Recording is already started.')
+            self.console.output('Recording is already started.')
 
     def _do_script_stop(self, params):
         '''Stops command recording'''
         if Framework._record:
-            self.output(f"Recording stopped. Commands saved to '{Framework._record}'.")
+            self.console.output(f"Recording stopped. Commands saved to '{Framework._record}'.")
             Framework._record = None
         else:
-            self.output('Recording is already stopped.')
+            self.console.output('Recording is already stopped.')
 
     def _do_script_status(self, params):
         '''Provides the status of command recording'''
         status = 'started' if Framework._record else 'stopped'
-        self.output(f"Command recording is {status}.")
+        self.console.output(f"Command recording is {status}.")
 
     def _do_script_execute(self, params):
         '''Executes commands from a script file'''
@@ -1134,7 +1005,7 @@ class Framework(cmd.Cmd):
             sys.stdin = open(params)
             Framework._script = 1
         else:
-            self.error(f"Script file '{params}' not found.")
+            self.console.error(f"Script file '{params}' not found.")
 
     def do_spool(self, params):
         '''Spools output to a file'''
@@ -1155,25 +1026,25 @@ class Framework(cmd.Cmd):
                 self._help_spool_start()
                 return
             if not self._is_writeable(filename):
-                self.output(f"Cannot spool output to '{filename}'.")
+                self.console.output(f"Cannot spool output to '{filename}'.")
             else:
                 Framework._spool = codecs.open(filename, 'ab', encoding='utf-8')
-                self.output(f"Spooling output to '{Framework._spool.name}'.")
+                self.console.output(f"Spooling output to '{Framework._spool.name}'.")
         else:
-            self.output('Spooling is already started.')
+            self.console.output('Spooling is already started.')
 
     def _do_spool_stop(self, params):
         '''Stops output spooling'''
         if Framework._spool:
-            self.output(f"Spooling stopped. Output saved to '{Framework._spool.name}'.")
+            self.console.output(f"Spooling stopped. Output saved to '{Framework._spool.name}'.")
             Framework._spool = None
         else:
-            self.output('Spooling is already stopped.')
+            self.console.output('Spooling is already stopped.')
 
     def _do_spool_status(self, params):
         '''Provides the status of output spooling'''
         status = 'started' if Framework._spool else 'stopped'
-        self.output(f"Output spooling is {status}.")
+        self.console.output(f"Output spooling is {status}.")
 
     def do_shell(self, params):
         '''Executes shell commands'''
@@ -1181,11 +1052,11 @@ class Framework(cmd.Cmd):
             self.help_shell()
             return
         proc = subprocess.Popen(params, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        self.output(f"Command: {params}")
+        self.console.output(f"Command: {params}")
         stdout = proc.stdout.read()
         stderr = proc.stderr.read()
-        if stdout:print(f"{Colors.O}{self.to_unicode(stdout)}{Colors.N}", end='')
-        if stderr:print(f"{Colors.R}{self.to_unicode(stderr)}{Colors.N}", end='')
+        if stdout:print(f"{ConsoleOutput.COLOR_O}{utils.to_unicode(stdout)}{ConsoleOutput.COLOR_N}", end='')
+        if stderr:print(f"{ConsoleOutput.COLOR_R}{utils.to_unicode(stderr)}{ConsoleOutput.COLOR_N}", end='')
 
     def do_dashboard(self, params):
         '''Displays a summary of activity'''
@@ -1195,16 +1066,16 @@ class Framework(cmd.Cmd):
             tdata = []
             for row in rows:
                 tdata.append(row)
-            self.table(tdata, header=['Module', 'Runs'], title='Activity Summary')
+            self.console.table(tdata, header=['Module', 'Runs'], title='Activity Summary')
             # display summary results table
             tables = self.get_tables()
             tdata = []
             for table in tables:
                 count = self.query(f"SELECT COUNT(*) FROM `{table}`")[0][0]
                 tdata.append([table.title(), count])
-            self.table(tdata, header=['Category', 'Quantity'], title='Results Summary')
+            self.console.table(tdata, header=['Category', 'Quantity'], title='Results Summary')
         else:
-            self.output('This workspace has no record of activity.')
+            self.console.output('This workspace has no record of activity.')
 
     def do_pdb(self, params):
         '''Starts a Python Debugger session (dev only)'''
