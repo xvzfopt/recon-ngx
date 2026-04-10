@@ -22,11 +22,8 @@ import builtins
 # =====================================================================================
 from recon.core.workspace import WorkspaceManager
 from recon.core import framework
-from recon.core.constants import BANNER, BANNER_SMALL
+from ..utils import utils
 from recon.core.workspace.workspace import Workspace
-
-# set the __version__ variable based on the VERSION file
-exec(open(os.path.join(Path(os.path.abspath(__file__)).parents[2], 'VERSION')).read())
 
 # using stdout to spool causes tab complete issues
 # therefore, override print function
@@ -57,8 +54,8 @@ class Recon(framework.Framework):
 
     repo_url = 'https://raw.githubusercontent.com/lanmaster53/recon-ng-modules/master/'
 
-    def __init__(self, check=True, analytics=True, marketplace=True, accessible=False):
-        framework.Framework.__init__(self, 'base')
+    def __init__(self, version, author, check=True, analytics=True, marketplace=True, accessible=False):
+        framework.Framework.__init__(self, 'base', version, author)
         self._name = 'recon-ng'
         self._prompt_template = '{}[{}] > '
         self._base_prompt = self._prompt_template.format('', self._name)
@@ -66,7 +63,7 @@ class Recon(framework.Framework):
         self._check = check
         self._analytics = analytics
         self._marketplace = marketplace
-        self._accessible = accessible
+        self.console.set_accessibility(accessible)
         # set path variables
         self.app_path = framework.Framework.app_path = sys.path[0]
         self.core_path = framework.Framework.core_path = os.path.join(self.app_path, 'core')
@@ -76,7 +73,7 @@ class Recon(framework.Framework):
         self.spaces_path = framework.Framework.spaces_path = os.path.join(self.home_path, 'workspaces')
 
         # Initialise Workspace Manager
-        self._wm = WorkspaceManager(self.spaces_path)
+        self._wm = WorkspaceManager(self.spaces_path, self.console)
 
     def start(self, mode, workspace='default'):
         # initialize framework components
@@ -86,7 +83,7 @@ class Recon(framework.Framework):
         self._init_workspace(workspace)
         self._check_version()
         if self._mode == Mode.CONSOLE:
-            self._print_banner()
+            self.console.print_banner(self._version, self._author, self._loaded_category)
             self.cmdloop()
 
     #==================================================
@@ -99,7 +96,7 @@ class Recon(framework.Framework):
         self.register_option('proxy', None, False, 'proxy server (address:port)')
         self.register_option('threads', 10, True, 'number of threads (where applicable)')
         self.register_option('timeout', 10, True, 'socket timeout (seconds)')
-        self.register_option('user-agent', f"Recon-ng/v{__version__.split('.')[0]}", True, 'user-agent string')
+        self.register_option('user-agent', f"Recon-ng/v{self._version.split('.')[0]}", True, 'user-agent string')
         self.register_option('verbosity', 1, True, 'verbosity level (0 = minimal, 1 = verbose, 2 = debug)')
 
     def _init_home(self):
@@ -118,37 +115,15 @@ class Recon(framework.Framework):
             try:
                 remote = re.search(pattern, self.request('GET', 'https://raw.githubusercontent.com/lanmaster53/recon-ng/master/VERSION').text).group(1)
             except Exception as e:
-                self.error(f"Version check failed ({type(e).__name__}).")
-                #self.print_exception()
-            if remote != __version__:
-                self.alert('Your version of Recon-ng does not match the latest release.')
-                self.alert('Please consider updating before further use.')
-                self.output(f"Remote version:  {remote}")
-                self.output(f"Local version:   {__version__}")
+                self.console.error(f"Version check failed ({type(e).__name__}).")
+                #self.console.print_exception()
+            if remote != self._version:
+                self.console.alert('Your version of Recon-ng does not match the latest release.')
+                self.console.alert('Please consider updating before further use.')
+                self.console.output(f"Remote version:  {remote}")
+                self.console.output(f"Local version:   {self._version}")
         else:
-            self.alert('Version check disabled.')
-
-    def _print_banner(self):
-        banner = BANNER
-        banner_len = len(max(banner.split(os.linesep), key=len))
-        author = '{0:^{1}}'.format(f"{framework.Colors.O}[{self._name} v{__version__}, {__author__}]{framework.Colors.N}", banner_len + 8)
-        if self._accessible:
-            banner = BANNER_SMALL
-            author = f"{framework.Colors.O}{self._name}, version {__version__}, by {__author__}{framework.Colors.N}"
-        print(banner)
-        print(author)
-        print('')
-        counts = [(len(self._loaded_category[x]), x) for x in self._loaded_category]
-        if counts:
-            count_len = len(max([self.to_unicode_str(x[0]) for x in counts], key=len))
-            for count in sorted(counts, reverse=True):
-                cnt = f"[{count[0]}]"
-                print(f"{framework.Colors.B}{cnt.ljust(count_len+2)} {count[1].title()} modules{framework.Colors.N}")
-                # create dynamic easter egg command based on counts
-                setattr(self, f"do_{count[0]}", self._menu_egg)
-        else:
-            self.alert('No modules enabled/installed.')
-        print('')
+            self.console.alert('Version check disabled.')
 
     def _send_analytics(self, cd):
         if self._analytics:
@@ -158,7 +133,7 @@ class Recon(framework.Framework):
                     # create the cid and file
                     import uuid
                     with open(cid_path, 'w') as fp:
-                        fp.write(self.to_unicode_str(uuid.uuid4()))
+                        fp.write(utils.to_unicode_str(uuid.uuid4()))
                 with open(cid_path) as fp:
                     cid = fp.read().strip()
                 params = {
@@ -167,16 +142,16 @@ class Recon(framework.Framework):
                         'cid': cid,
                         't': 'screenview',
                         'an': 'Recon-ng',
-                        'av': __version__,
+                        'av': self._version,
                         'cd': cd
                         }
                 self.request('GET', 'https://www.google-analytics.com/collect', params=params)
             except Exception as e:
-                self.debug(f"Analytics failed ({type(e).__name__}).")
-                #self.print_exception()
+                self.console.debug(f"Analytics failed ({type(e).__name__}).")
+                #self.console.print_exception()
                 return
         else:
-            self.debug('Analytics disabled.')
+            self.console.debug('Analytics disabled.')
 
     def _menu_egg(self, params):
         eggs = [
@@ -219,6 +194,9 @@ class Recon(framework.Framework):
         self._load_modules()
         return True
 
+    def _get_workspaces(self):
+        return [x.get_name() for x in self._wm.get_workspaces()]
+
     def _get_snapshots(self):
         snapshots = []
         for f in os.listdir(self.workspace):
@@ -254,21 +232,21 @@ class Recon(framework.Framework):
     def _fetch_module_index(self):
         if self._marketplace:
             content = '[]'
-            self.debug('Fetching index file...')
+            self.console.debug('Fetching index file...')
             try:
                 resp = self._request_file_from_repo('modules.yml')
             except Exception as e:
-                self.error(f"Unable to synchronize module index. ({type(e).__name__})")
-                #self.print_exception()
+                self.console.error(f"Unable to synchronize module index. ({type(e).__name__})")
+                #self.console.print_exception()
                 return
             content = resp.text
             path = os.path.join(self.home_path, 'modules.yml')
             self._write_local_file(path, content)
         else:
-            self.alert('Marketplace disabled.')
+            self.console.alert('Marketplace disabled.')
 
     def _update_module_index(self):
-        self.debug('Updating index file...')
+        self.console.debug('Updating index file...')
         # initialize module index
         self._module_index = []
         # load module index from local copy
@@ -312,8 +290,8 @@ class Recon(framework.Framework):
             try:
                 resp = self._request_file_from_repo('/'.join(['data', filename]))
             except:
-                self.error(f"Supporting file download for {path} failed: ({filename})")
-                self.error('Module installation aborted.')
+                self.console.error(f"Supporting file download for {path} failed: ({filename})")
+                self.console.error('Module installation aborted.')
                 raise
             abs_path = os.path.join(self.data_path, filename)
             downloads[abs_path] = resp.text
@@ -322,14 +300,14 @@ class Recon(framework.Framework):
         try:
             resp = self._request_file_from_repo('/'.join(['modules', rel_path]))
         except:
-            self.error(f"Module installation failed: {path}")
+            self.console.error(f"Module installation failed: {path}")
             raise
         abs_path = os.path.join(self.mod_path, rel_path)
         downloads[abs_path] = resp.text
         # install the module
         for abs_path, content in downloads.items():
             self._write_local_file(abs_path, content)
-        self.output(f"Module installed: {path}")
+        self.console.output(f"Module installed: {path}")
 
     def _remove_module(self, path):
         # remove the module
@@ -342,7 +320,7 @@ class Recon(framework.Framework):
             abs_path = os.path.join(self.data_path, filename)
             if os.path.exists(abs_path):
                 os.remove(abs_path)
-        self.output(f"Module removed: {path}")
+        self.console.output(f"Module removed: {path}")
 
     def _load_modules(self):
         self._loaded_category = {}
@@ -378,11 +356,11 @@ class Recon(framework.Framework):
             return True
         except ImportError as e:
             # notify the user of missing dependencies
-            self.error(f"Module '{mod_dispname}' disabled. Dependency required: '{self.to_unicode_str(e)[16:]}'")
+            self.console.error(f"Module '{mod_dispname}' disabled. Dependency required: '{utils.to_unicode_str(e)[16:]}'")
         except:
             # notify the user of errors
-            self.print_exception()
-            self.error(f"Module '{mod_dispname}' disabled.")
+            self.console.print_exception()
+            self.console.error(f"Module '{mod_dispname}' disabled.")
         # remove the module from the framework's loaded modules
         self._loaded_modules.pop(mod_dispname, None)
         self._categorize_module('disabled', mod_dispname)
@@ -402,7 +380,7 @@ class Recon(framework.Framework):
         if not mod_path:
             self.help_index()
             return
-        self.output('Building index markup...')
+        self.console.output('Building index markup...')
         yaml_objs = []
         modules = [m for m in self._loaded_modules.items() if mod_path in m[0] or mod_path == 'all']
         for path, module in sorted(modules, key=lambda k: k[0]):
@@ -430,14 +408,14 @@ class Recon(framework.Framework):
             if file_name:
                 with open(file_name, 'w') as outfile:
                     outfile.write(markup)
-                self.output('Module index created.')
+                self.console.output('Module index created.')
         else:
-            self.output('No modules found.')
+            self.console.output('No modules found.')
 
     def do_marketplace(self, params):
         '''Interfaces with the module marketplace'''
         if not self._marketplace:
-            self.alert('Marketplace disabled.')
+            self.console.alert('Marketplace disabled.')
             return
         if not params:
             self.help_marketplace()
@@ -452,13 +430,13 @@ class Recon(framework.Framework):
         '''Refreshes the marketplace index'''
         self._fetch_module_index()
         self._update_module_index()
-        self.output('Marketplace index refreshed.')
+        self.console.output('Marketplace index refreshed.')
 
     def _do_marketplace_search(self, params):
         '''Searches marketplace modules'''
         modules = [m for m in self._module_index]
         if params:
-            self.output(f"Searching module index for '{params}'...")
+            self.console.output(f"Searching module index for '{params}'...")
             modules = self._search_module_index(params)
         if modules:
             rows = []
@@ -470,11 +448,11 @@ class Recon(framework.Framework):
                 row.append('*' if module['required_keys'] else '')
                 rows.append(row)
             header = ('Path', 'Version', 'Status', 'Updated', 'D', 'K')
-            self.table(rows, header=header)
+            self.console.table(rows, header=header)
             print(f"{self.spacer}D = Has dependencies. See info for details.")
             print(f"{self.spacer}K = Requires keys. See info for details.{os.linesep}")
         else:
-            self.error('No modules found.')
+            self.console.error('No modules found.')
             self._help_marketplace_search()
 
     def _do_marketplace_info(self, params):
@@ -489,9 +467,9 @@ class Recon(framework.Framework):
                 for key in ('path', 'name', 'author', 'version', 'last_updated', 'description', 'required_keys', 'dependencies', 'files', 'status'):
                     row = (key, module[key])
                     rows.append(row)
-                self.table(rows)
+                self.console.table(rows)
         else:
-            self.error('Invalid module path.')
+            self.console.error('Invalid module path.')
 
     def _do_marketplace_install(self, params):
         '''Installs modules from the marketplace'''
@@ -504,7 +482,7 @@ class Recon(framework.Framework):
                 self._install_module(module['path'])
             self._do_modules_reload('')
         else:
-            self.error('Invalid module path.')
+            self.console.error('Invalid module path.')
 
     def _do_marketplace_remove(self, params):
         '''Removes marketplace modules from the framework'''
@@ -517,7 +495,7 @@ class Recon(framework.Framework):
                 self._remove_module(module['path'])
             self._do_modules_reload('')
         else:
-            self.error('Invalid module path.')
+            self.console.error('Invalid module path.')
 
     def do_workspaces(self, params):
         '''Manages workspaces'''
@@ -536,7 +514,7 @@ class Recon(framework.Framework):
         for workspace in self._wm.get_workspaces():
             rows.append((workspace.get_name(), workspace.get_mod_time()))
         rows.sort(key=lambda x: x[0])
-        self.table(rows, header=['Workspaces', 'Modified'])
+        self.console.table(rows, header=['Workspaces', 'Modified'])
 
     def _do_workspaces_create(self, params):
         '''Creates a new workspace'''
@@ -544,7 +522,7 @@ class Recon(framework.Framework):
             self._help_workspaces_create()
             return
         if not self._init_workspace(params):
-            self.output(f"Unable to create '{params}' workspace.")
+            self.console.output(f"Unable to create '{params}' workspace.")
 
     def _do_workspaces_load(self, params):
         '''Loads an existing workspace'''
@@ -553,9 +531,9 @@ class Recon(framework.Framework):
             return
         if params in [x.get_name() for x in self._wm.get_workspaces()]:
             if not self._init_workspace(params):
-                self.output(f"Unable to initialize '{params}' workspace.")
+                self.console.output(f"Unable to initialize '{params}' workspace.")
         else:
-            self.output('Invalid workspace name.')
+            self.console.output('Invalid workspace name.')
 
     def _do_workspaces_remove(self, params):
         '''Removes an existing workspace'''
@@ -563,7 +541,7 @@ class Recon(framework.Framework):
             self._help_workspaces_remove()
             return
         if not self._wm.remove_workspace(params):
-            self.output(f"Unable to remove '{params}' workspace.")
+            self.console.output(f"Unable to remove '{params}' workspace.")
         else:
             if params == self.workspace.split('/')[-1]:
                 self._init_workspace('default')
@@ -583,9 +561,9 @@ class Recon(framework.Framework):
         '''Lists existing database snapshots'''
         snapshots = self._get_snapshots()
         if snapshots:
-            self.table([[x] for x in snapshots], header=['Snapshots'])
+            self.console.table([[x] for x in snapshots], header=['Snapshots'])
         else:
-            self.output('This workspace has no snapshots.')
+            self.console.output('This workspace has no snapshots.')
 
     def _do_snapshots_take(self, params):
         '''Takes a snapshot of the current database'''
@@ -594,7 +572,7 @@ class Recon(framework.Framework):
         src = os.path.join(self.workspace, 'data.db')
         dst = os.path.join(self.workspace, snapshot)
         shutil.copyfile(src, dst)
-        self.output(f"Snapshot created: {snapshot}")
+        self.console.output(f"Snapshot created: {snapshot}")
 
     def _do_snapshots_load(self, params):
         '''Loads an existing database snapshot'''
@@ -605,9 +583,9 @@ class Recon(framework.Framework):
             src = os.path.join(self.workspace, params)
             dst = os.path.join(self.workspace, 'data.db')
             shutil.copyfile(src, dst)
-            self.output(f"Snapshot loaded: {params}")
+            self.console.output(f"Snapshot loaded: {params}")
         else:
-            self.error(f"No snapshot named '{params}'.")
+            self.console.error(f"No snapshot named '{params}'.")
 
     def _do_snapshots_remove(self, params):
         '''Removes an existing snapshot'''
@@ -616,9 +594,9 @@ class Recon(framework.Framework):
             return
         if params in self._get_snapshots():
             os.remove(os.path.join(self.workspace, params))
-            self.output(f"Snapshot removed: {params}")
+            self.console.output(f"Snapshot removed: {params}")
         else:
-            self.error(f"No snapshot named '{params}'.")
+            self.console.error(f"No snapshot named '{params}'.")
 
     def _do_modules_load(self, params):
         '''Loads a module'''
@@ -626,7 +604,7 @@ class Recon(framework.Framework):
         try:
             self._validate_options()
         except framework.FrameworkException as e:
-            self.error(e)
+            self.console.error(e)
             return
         if not params:
             self._help_modules_load()
@@ -636,9 +614,9 @@ class Recon(framework.Framework):
         # notify the user if none or multiple modules are found
         if len(modules) != 1:
             if not modules:
-                self.error('Invalid module name.')
+                self.console.error('Invalid module name.')
             else:
-                self.output(f"Multiple modules match '{params}'.")
+                self.console.output(f"Multiple modules match '{params}'.")
                 self._list_modules(modules)
             return
         # load the module
@@ -661,7 +639,7 @@ class Recon(framework.Framework):
             if y._exit == 1:
                 return True
             if y._reload == 1:
-                self.output('Reloading module...')
+                self.console.output('Reloading module...')
                 # reload the module in memory
                 is_loaded = self._load_module(os.path.dirname(mod_loadpath), os.path.basename(mod_loadpath))
                 if is_loaded:
@@ -672,7 +650,7 @@ class Recon(framework.Framework):
 
     def _do_modules_reload(self, params):
         '''Reloads installed modules'''
-        self.output('Reloading modules...')
+        self.console.output('Reloading modules...')
         self._load_modules()
 
     #==================================================
