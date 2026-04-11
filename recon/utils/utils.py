@@ -3,6 +3,8 @@
 # =====================================================================================
 import random
 import string
+import json
+import os
 
 # =====================================================================================
 # Imports: Internal
@@ -44,3 +46,34 @@ def to_unicode(obj, encoding='utf-8'):
         obj = obj.decode(encoding)
     return obj
 
+def write_local_file(path, content):
+    '''
+    Writes the provided content to the specified local file
+
+    :param path: The path to write the content to
+    :type path: str
+    :param content: The content to write
+    :type content: str
+    '''
+    with open(path, 'w') as file:
+        file.write(content)
+
+def json_pretty_print(data):
+    '''
+    Pretty prints the provided data
+    '''
+    print(json.dumps(data, indent=4))
+
+
+def remove_empty_dirs(base_path):
+    '''
+    Recursively removes empty directories
+
+    :param base_path: The base path to remove empty directories from
+    :type base_path: str
+    '''
+    for root, dirs, files in os.walk(base_path, topdown=False):
+        for rel_path in dirs:
+            abs_path = os.path.join(root, rel_path)
+            if os.path.exists(abs_path) and not os.listdir(abs_path):
+                os.removedirs(abs_path)
