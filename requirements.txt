@@ -12,3 +12,4 @@ dicttoxml
 XlsxWriter
 unicodecsv
 rq
+requests
