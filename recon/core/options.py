@@ -15,10 +15,28 @@ class Options(dict):
     recon-ngx --> Migrated across from framework.py of recon-ng
     '''
 
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
     def __init__(self, *args, **kwargs):
         self.required = {}
         self.description = {}
         super(Options, self).__init__(*args, **kwargs)
+
+    def initialise_global_options(self, version):
+        '''
+        Initialises the set of Global recon-ngx options
+
+        :param vesion: The recon-ngx version
+        :type vesion: str
+        '''
+        self.init_option('nameserver', '8.8.8.8', True, 'default nameserver for the resolver mixin')
+        self.init_option('proxy', None, False, 'proxy server (address:port)')
+        self.init_option('threads', 10, True, 'number of threads (where applicable)')
+        self.init_option('timeout', 10, True, 'socket timeout (seconds)')
+        self.init_option('user-agent', f"Recon-ng/v{version.split('.')[0]}", True, 'user-agent string')
+        self.init_option('verbosity', 1, True, 'verbosity level (0 = minimal, 1 = verbose, 2 = debug)')
+
 
     def __getitem__(self, name):
         name = self.__keytransform__(name)
