@@ -57,6 +57,9 @@ def write_local_file(path, content):
     :param content: The content to write
     :type content: str
     '''
+    dirpath = os.path.dirname(path)
+    if not os.path.isdir(dirpath):
+        os.makedirs(dirpath)
     with open(path, 'w') as file:
         file.write(content)
 
