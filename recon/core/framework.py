@@ -776,18 +776,6 @@ class Framework(cmd.Cmd):
         else:
             self.help_modules()
 
-    def _do_modules_search(self, params):
-        '''Searches installed modules'''
-        modules = [x for x in Framework._loaded_modules]
-        if params:
-            self.console.output(f"Searching installed modules for '{params}'...")
-            modules = [x for x in Framework._loaded_modules if re.search(params, x)]
-        if modules:
-            self._list_modules(modules)
-        else:
-            self.console.error('No modules found.')
-            self._help_modules_search()
-
     def _do_modules_load(self, params):
         '''Searches installed modules'''
         raise NotImplementedError
