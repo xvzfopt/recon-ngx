@@ -5,6 +5,8 @@ import random
 import string
 import json
 import os
+import sys
+from contextlib import contextmanager
 
 # =====================================================================================
 # Imports: Internal
@@ -77,3 +79,12 @@ def remove_empty_dirs(base_path):
             abs_path = os.path.join(root, rel_path)
             if os.path.exists(abs_path) and not os.listdir(abs_path):
                 os.removedirs(abs_path)
+
+@contextmanager
+def add_to_path(path):
+    sys.path.insert(0, path)
+    try:
+        yield
+    finally:
+        sys.path.remove(path)
+
