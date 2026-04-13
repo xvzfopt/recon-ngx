@@ -21,6 +21,7 @@ import builtins
 # Imports: Internal
 # =====================================================================================
 from recon.core.workspace import WorkspaceManager
+from recon.core._module import ModuleManager
 from recon.core import framework
 from ..utils import utils
 from recon.core.workspace.workspace import Workspace
@@ -75,6 +76,9 @@ class Recon(framework.Framework):
         # Initialise Workspace Manager
         self._wm = WorkspaceManager(self.spaces_path, self.console)
 
+        # Initialise Module Manager
+        self._mm = ModuleManager(self.home_path, self.console)
+
     def start(self, mode, workspace='default'):
         # initialize framework components
         self._mode = framework.Framework._mode = mode
@@ -83,7 +87,7 @@ class Recon(framework.Framework):
         self._init_workspace(workspace)
         self._check_version()
         if self._mode == Mode.CONSOLE:
-            self.console.print_banner(self._version, self._author, self._loaded_category)
+            self.console.print_banner(self._version, self._author, self._mm.get_module_categories())
             self.cmdloop()
 
     #==================================================
@@ -92,12 +96,7 @@ class Recon(framework.Framework):
 
     def _init_global_options(self):
         self.options = self._global_options
-        self.register_option('nameserver', '8.8.8.8', True, 'default nameserver for the resolver mixin')
-        self.register_option('proxy', None, False, 'proxy server (address:port)')
-        self.register_option('threads', 10, True, 'number of threads (where applicable)')
-        self.register_option('timeout', 10, True, 'socket timeout (seconds)')
-        self.register_option('user-agent', f"Recon-ng/v{self._version.split('.')[0]}", True, 'user-agent string')
-        self.register_option('verbosity', 1, True, 'verbosity level (0 = minimal, 1 = verbose, 2 = debug)')
+        self.options.initialise_global_options(self._version)
 
     def _init_home(self):
         # initialize home folder
@@ -106,7 +105,7 @@ class Recon(framework.Framework):
         # initialize keys database
         self._query_keys('CREATE TABLE IF NOT EXISTS keys (name TEXT PRIMARY KEY, value TEXT)')
         # initialize module index
-        self._fetch_module_index()
+        self._mm.fetch_marketplace_index()
 
     def _check_version(self):
         if self._check:
@@ -191,7 +190,7 @@ class Recon(framework.Framework):
         # load workspace configuration
         self._load_config()
         # reload modules after config to populate options
-        self._load_modules()
+        self._mm.load_modules()
         return True
 
     def _get_workspaces(self):
@@ -207,85 +206,16 @@ class Recon(framework.Framework):
     #==================================================
     # MODULE METHODS
     #==================================================
-
     def _request_file_from_repo(self, path):
         resp = self.request('GET', urljoin(self.repo_url, path))
         if resp.status_code != 200:
             raise framework.FrameworkException(f"Invalid response from module repository ({resp.status_code}).")
         return resp
 
-    def _write_local_file(self, path, content):
-        dirpath = os.path.sep.join(path.split(os.path.sep)[:-1])
-        if not os.path.exists(dirpath):
-            os.makedirs(dirpath)
-        with open(path, 'w') as outfile:
-            outfile.write(content)
-
-    def _remove_empty_dirs(self, base_path):
-        for root, dirs, files in os.walk(base_path, topdown=False):
-            for rel_path in dirs:
-                abs_path = os.path.join(root, rel_path)
-                if os.path.exists(abs_path):
-                    if not os.listdir(abs_path):
-                        os.removedirs(abs_path)
-
-    def _fetch_module_index(self):
-        if self._marketplace:
-            content = '[]'
-            self.console.debug('Fetching index file...')
-            try:
-                resp = self._request_file_from_repo('modules.yml')
-            except Exception as e:
-                self.console.error(f"Unable to synchronize module index. ({type(e).__name__})")
-                #self.console.print_exception()
-                return
-            content = resp.text
-            path = os.path.join(self.home_path, 'modules.yml')
-            self._write_local_file(path, content)
-        else:
-            self.console.alert('Marketplace disabled.')
-
-    def _update_module_index(self):
-        self.console.debug('Updating index file...')
-        # initialize module index
-        self._module_index = []
-        # load module index from local copy
-        path = os.path.join(self.home_path, 'modules.yml')
-        if os.path.exists(path):
-            with open(path, 'r') as infile:
-                self._module_index = yaml.safe_load(infile)
-            # add status to index for each module
-            for module in self._module_index:
-                status = 'not installed'
-                if module['path'] in self._loaded_category.get('disabled', []):
-                    status = 'disabled'
-                elif module['path'] in self._loaded_modules.keys():
-                    status = 'installed'
-                    loaded = self._loaded_modules[module['path']]
-                    if loaded.meta['version'] != module['version']:
-                        status = 'outdated'
-                module['status'] = status
-
-    def _search_module_index(self, s):
-        keys = ('path', 'name', 'description', 'status')
-        modules = []
-        for module in self._module_index:
-            for key in keys:
-                if re.search(s, module[key]):
-                    modules.append(module)
-                    break
-        return modules
-
-    def _get_module_from_index(self, path):
-        for module in self._module_index:
-            if module['path'] == path:
-                return module
-        return None
-
     def _install_module(self, path):
         # download supporting data files
         downloads = {}
-        files = self._get_module_from_index(path).get('files', [])
+        files = self._mm.get_module_from_index(path).get('files', [])
         for filename in files:
             try:
                 resp = self._request_file_from_repo('/'.join(['data', filename]))
@@ -306,7 +236,7 @@ class Recon(framework.Framework):
         downloads[abs_path] = resp.text
         # install the module
         for abs_path, content in downloads.items():
-            self._write_local_file(abs_path, content)
+            utils.write_local_file(abs_path, content)
         self.console.output(f"Module installed: {path}")
 
     def _remove_module(self, path):
@@ -315,60 +245,12 @@ class Recon(framework.Framework):
         abs_path = os.path.join(self.mod_path, rel_path)
         os.remove(abs_path)
         # remove supporting data files
-        files = self._get_module_from_index(path).get('files', [])
+        files = self._mm.get_module_from_index(path).get('files', [])
         for filename in files:
             abs_path = os.path.join(self.data_path, filename)
             if os.path.exists(abs_path):
                 os.remove(abs_path)
         self.console.output(f"Module removed: {path}")
-
-    def _load_modules(self):
-        self._loaded_category = {}
-        self._loaded_modules = framework.Framework._loaded_modules = {}
-        # crawl the module directory and build the module tree
-        for dirpath, dirnames, filenames in os.walk(self.mod_path, followlinks=True):
-            # remove hidden files and directories
-            filenames = [f for f in filenames if not f[0] == '.']
-            dirnames[:] = [d for d in dirnames if not d[0] == '.']
-            if len(filenames) > 0:
-                for filename in [f for f in filenames if f.endswith('.py')]:
-                    self._load_module(dirpath, filename)
-        # cleanup module directory
-        self._remove_empty_dirs(self.mod_path)
-        # update module index
-        self._update_module_index()
-
-    def _load_module(self, dirpath, filename):
-        mod_name = filename.split('.')[0]
-        mod_category = re.search('/modules/([^/]*)', dirpath).group(1)
-        mod_dispname = '/'.join(re.split('/modules/', dirpath)[-1].split('/') + [mod_name])
-        mod_loadname = mod_dispname.replace('/', '_')
-        mod_loadpath = os.path.join(dirpath, filename)
-        mod_file = open(mod_loadpath)
-        try:
-            # import the module into memory
-            mod = SourceFileLoader(mod_loadname, mod_loadpath).load_module()
-            __import__(mod_loadname)
-            # add the module to the framework's loaded modules
-            self._loaded_modules[mod_dispname] = sys.modules[mod_loadname].Module(mod_dispname)
-            self._categorize_module(mod_category, mod_dispname)
-            # return indication of success to support module reload
-            return True
-        except ImportError as e:
-            # notify the user of missing dependencies
-            self.console.error(f"Module '{mod_dispname}' disabled. Dependency required: '{utils.to_unicode_str(e)[16:]}'")
-        except:
-            # notify the user of errors
-            self.console.print_exception()
-            self.console.error(f"Module '{mod_dispname}' disabled.")
-        # remove the module from the framework's loaded modules
-        self._loaded_modules.pop(mod_dispname, None)
-        self._categorize_module('disabled', mod_dispname)
-
-    def _categorize_module(self, category, module):
-        if not category in self._loaded_category:
-            self._loaded_category[category] = []
-        self._loaded_category[category].append(module)
 
     #==================================================
     # COMMAND METHODS
@@ -382,7 +264,7 @@ class Recon(framework.Framework):
             return
         self.console.output('Building index markup...')
         yaml_objs = []
-        modules = [m for m in self._loaded_modules.items() if mod_path in m[0] or mod_path == 'all']
+        modules = [m for m in self._mm._loaded_modules.items() if mod_path in m[0] or mod_path == 'all']
         for path, module in sorted(modules, key=lambda k: k[0]):
             yaml_obj = {}
             # not in meta
@@ -428,16 +310,15 @@ class Recon(framework.Framework):
 
     def _do_marketplace_refresh(self, params):
         '''Refreshes the marketplace index'''
-        self._fetch_module_index()
-        self._update_module_index()
+        self._mm.fetch_marketplace_index()
         self.console.output('Marketplace index refreshed.')
 
     def _do_marketplace_search(self, params):
         '''Searches marketplace modules'''
-        modules = [m for m in self._module_index]
+        modules = [m for m in self._mm.get_module_index()]
         if params:
             self.console.output(f"Searching module index for '{params}'...")
-            modules = self._search_module_index(params)
+            modules = self._mm.search_module_index(params)
         if modules:
             rows = []
             for module in sorted(modules, key=lambda m: m['path']):
@@ -460,7 +341,7 @@ class Recon(framework.Framework):
         if not params:
             self._help_marketplace_info()
             return
-        modules = [m for m in self._module_index if params in m['path'] or params == 'all']
+        modules = [m for m in self._mm.get_module_index() if params in m['path'] or params == 'all']
         if modules:
             for module in modules:
                 rows = []
@@ -476,7 +357,7 @@ class Recon(framework.Framework):
         if not params:
             self._help_marketplace_install()
             return
-        modules = [m for m in self._module_index if params in m['path'] or params == 'all']
+        modules = [m for m in self._mm.get_module_index() if params in m['path'] or params == 'all']
         if modules:
             for module in modules:
                 self._install_module(module['path'])
@@ -489,7 +370,7 @@ class Recon(framework.Framework):
         if not params:
             self._help_marketplace_remove()
             return
-        modules = [m for m in self._module_index if m['status'] in ('installed', 'disabled') and (params in m['path'] or params == 'all')]
+        modules = [m for m in self._mm.get_module_index() if m['status'] in ('installed', 'disabled') and (params in m['path'] or params == 'all')]
         if modules:
             for module in modules:
                 self._remove_module(module['path'])
@@ -598,6 +479,18 @@ class Recon(framework.Framework):
         else:
             self.console.error(f"No snapshot named '{params}'.")
 
+    def _do_modules_search(self, params):
+        '''Searches installed modules'''
+        modules = [x for x in self._mm.get_loaded_modules()]
+        if params:
+            self.console.output(f"Searching installed modules for '{params}'...")
+            modules = [x for x in self._mm.get_loaded_modules() if re.search(params, x)]
+        if modules:
+            self._list_modules(modules)
+        else:
+            self.console.error('No modules found.')
+            self._help_modules_search()
+
     def _do_modules_load(self, params):
         '''Loads a module'''
         # validate global options before loading the module
@@ -623,7 +516,7 @@ class Recon(framework.Framework):
         mod_dispname = modules[0]
         # loop to support reload logic
         while True:
-            y = self._loaded_modules[mod_dispname]
+            y = self._mm._loaded_modules[mod_dispname]
             # send analytics information
             mod_loadpath = os.path.abspath(sys.modules[y.__module__].__file__)
             self._send_analytics(mod_dispname)
@@ -651,7 +544,7 @@ class Recon(framework.Framework):
     def _do_modules_reload(self, params):
         '''Reloads installed modules'''
         self.console.output('Reloading modules...')
-        self._load_modules()
+        self._mm.load_modules()
 
     #==================================================
     # HELP METHODS
@@ -715,7 +608,7 @@ class Recon(framework.Framework):
 
     def complete_index(self, text, line, *ignored):
         if len(line.split(' ')) == 2:
-            return [x for x in self._loaded_modules if x.startswith(text)]
+            return [x for x in self._mm._loaded_modules if x.startswith(text)]
         return []
 
     def complete_marketplace(self, text, line, *ignored):
@@ -730,11 +623,11 @@ class Recon(framework.Framework):
     _complete_marketplace_search = _complete_marketplace_refresh
 
     def _complete_marketplace_info(self, text, *ignored):
-        return [x['path'] for x in self._module_index if x['path'].startswith(text)]
+        return [x['path'] for x in self._mm.get_module_index() if x['path'].startswith(text)]
     _complete_marketplace_install = _complete_marketplace_info
 
     def _complete_marketplace_remove(self, text, *ignored):
-        return [x['path'] for x in self._module_index if x['status'] == 'installed' and x['path'].startswith(text)]
+        return [x['path'] for x in self._mm.get_module_index() if x['status'] == 'installed' and x['path'].startswith(text)]
 
     def complete_workspaces(self, text, line, *ignored):
         arg, params = self._parse_params(line.split(' ', 1)[1])
