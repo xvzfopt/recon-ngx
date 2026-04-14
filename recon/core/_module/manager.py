@@ -189,7 +189,7 @@ class ModuleManager:
             __import__(mod_info["loadname"])
 
             # Add the module to the framework's loaded modules
-            self._loaded_modules[mod_info["dispname"]] = sys.modules[mod_info["loadname"]].Module(mod_info["dispname"])
+            self._loaded_modules[mod_info["dispname"]] = sys.modules[mod_info["loadname"]].Module(mod_info["dispname"], self)
             self._add_module_to_category(mod_info["category"], mod_info["dispname"])
 
             # Success
@@ -411,6 +411,17 @@ class ModuleManager:
         if self.is_installed(path):
             return self.get_module_index()[path]["status"] not in (self.MODULE_STATUS_UNINSTALLED, self.MODULE_STATUS_DISABLED)
         return False
+
+
+    def find_matching_installed_modules(self, s):
+        '''
+
+        '''
+        # return an exact match
+        if s in self._loaded_modules:
+            return [s]
+        # use the provided name as a keyword search and return the results
+        return [x for x in self._loaded_modules if s in x]
 
     # =====================================================================================
     # Helper Functions
