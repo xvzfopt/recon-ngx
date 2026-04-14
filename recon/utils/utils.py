@@ -135,3 +135,12 @@ def is_writeable(path):
         return True
     except IOError:
         return False
+
+def get_user_home_path():
+    '''
+    Gets the path to the user's home directory
+
+    :return: The path to the user's home directory
+    :rtype: str
+    '''
+    return os.path.expanduser("~")
