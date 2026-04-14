@@ -59,7 +59,14 @@ class ModuleManager:
         # Build Paths
         self._home_path = home_path
         self._modules_path = os.path.join(self._home_path, 'modules')
+        self._data_path = os.path.join(self._home_path, 'data')
 
+        # Initialise Local Modules Index
+        self._build_local_index()
+
+    # =====================================================================================
+    # Index Functions
+    # =====================================================================================
     def fetch_marketplace_index(self):
         '''
         Fetches the Modules index from the Marketplace
@@ -78,9 +85,25 @@ class ModuleManager:
             return
 
         utils.write_local_file(file_dest, r.text)
-        self.build_local_index()
+        self._build_local_index()
 
-    def build_local_index(self):
+    def search_module_index(self, s):
+        '''
+        Searches the module index for a specific module
+
+        :param s: The search string
+        :type s: str
+        '''
+        keys = ('path', 'name', 'description', 'status')
+        modules = []
+        for module in self._module_index:
+            for key in keys:
+                if re.search(s, module[key]):
+                    modules.append(module)
+                    break
+        return modules
+
+    def _build_local_index(self):
         '''
         Builds the local Modules index
         '''
@@ -105,6 +128,11 @@ class ModuleManager:
                     status = self.MODULE_STATUS_OUTDATED
             module['status'] = status
 
+        self._console.debug("Module index: %s" % self._module_index)
+
+    # =====================================================================================
+    # Module Load Functions
+    # =====================================================================================
     def load_modules(self):
         '''
         Loads locally installed modules
@@ -115,7 +143,7 @@ class ModuleManager:
 
             # LOAD: Package Module
             if self.is_python_package(dirpath):
-                self._load_package_module(dirpath)
+                # self._load_package_module(dirpath)
                 # Don't traverse any further
                 dirnames.clear()
             # LOAD: File Module
@@ -128,7 +156,7 @@ class ModuleManager:
         # Clean Modules Directory
         utils.remove_empty_dirs(self._modules_path)
         # Refresh Modules Index
-        self.build_local_index()
+        self._build_local_index()
 
     def _load_file_module(self, dirpath, filename):
         '''
@@ -188,7 +216,6 @@ class ModuleManager:
         self._add_module_to_category('disabled', mod_info["dispname"])
 
         return False
-
 
     def _load_package_module(self, path):
         '''
@@ -255,24 +282,64 @@ class ModuleManager:
 
 
     # =====================================================================================
-    # Marketplace Functions
+    # Installation Functions
     # =====================================================================================
-    def search_module_index(self, s):
+    def install_module(self, path):
         '''
-        Searches the module index for a specific module
+        Installs the specified module
 
-        :param s: The search string
-        :type s: str
+        :param path: The module's path (e.g. discovery/module1)
+        :type path: str
         '''
-        keys = ('path', 'name', 'description', 'status')
-        modules = []
-        for module in self._module_index:
-            for key in keys:
-                if re.search(s, module[key]):
-                    modules.append(module)
-                    break
-        return modules
+        downloads = {}
 
+        # Download supporting data files
+        data_files = self.get_module_from_index(path).get('files', [])
+        for data_file in data_files:
+            try:
+                dest_path = os.path.join(self._data_path, data_file)
+                success = self.fetch_marketplace_file('/'.join(['data', data_file]), dest_path)
+                if not success:
+                    raise Exception()
+            except:
+                self._console.error(f"Supporting file download for {path} failed: ({data_file})")
+                self._console.error('Module installation aborted.')
+                raise
+
+        # Download the module
+        rel_path = '.'.join([path, 'py'])
+        try:
+            dest_path = os.path.join(self._modules_path, rel_path)
+            success = self.fetch_marketplace_file('/'.join(['modules', rel_path]), dest_path)
+            if not success:
+                raise Exception()
+        except:
+            self._console.error(f"Module installation failed: {path}")
+            raise
+
+        self._console.output(f"Module installed: {path}")
+
+    def uninstall_module(self, path):
+        '''
+        Uninstalls the specified module
+
+        :param path: The module's path (e.g. discovery/module1)
+        :type path: str
+        '''
+
+        # Remove Module File
+        rel_path = '.'.join([path, 'py'])
+        abs_path = os.path.join(self._modules_path, rel_path)
+        os.remove(abs_path)
+
+        # Remove supporting data files
+        files = self.get_module_from_index(path).get('files', [])
+        for filename in files:
+            abs_path = os.path.join(self._data_path, filename)
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+
+        self._console.output(f"Module uninstalled: {path}")
 
     # =====================================================================================
     # Getters
@@ -306,7 +373,7 @@ class ModuleManager:
 
     def get_module_from_index(self, path):
         '''
-        Gets the module instance of the module with the specified path
+        Gets the module instance of the module with the specified name
 
         :param path: The path of the target module
         :type path: str
@@ -317,6 +384,33 @@ class ModuleManager:
             if module['path'] == path:
                 return module
         return None
+
+    def is_installed(self, path):
+        '''
+        Checks if the specified module is installed
+
+        :param path: The module's path
+        :type path: str
+        :returns: True if the module is installed, False otherwise
+        :rtype: bool
+        '''
+        for module in self.get_module_index():
+            if module['path'] == path and module["status"] in (self.MODULE_STATUS_INSTALLED, self.MODULE_STATUS_DISABLED, self.MODULE_STATUS_OUTDATED):
+                return True
+        return False
+
+    def is_enabled(self, path):
+        '''
+        Checks if the specified module is enabled
+
+        :param path: The module's path
+        :type path: str
+        :returns: True if the module is enabled, False otherwise
+        :rtype: bool
+        '''
+        if self.is_installed(path):
+            return self.get_module_index()[path]["status"] not in (self.MODULE_STATUS_UNINSTALLED, self.MODULE_STATUS_DISABLED)
+        return False
 
     # =====================================================================================
     # Helper Functions
@@ -335,6 +429,34 @@ class ModuleManager:
             if os.path.isfile(package_init):
                 return True
         return False
+
+    def fetch_marketplace_file(self, path, dest):
+        '''
+        Fetches the specified file from the recon-ngx Marketplace
+
+        :param path: The path of the file to fetch
+        :type path: str
+        :param dest: The destination path to write the file to
+        :type dest: str
+        :returns: The file content
+        :rtype: str
+        '''
+        success = False
+        url = self.URL_MARKETPLACE + "/%s" % path
+        self._console.debug("Fetching Marketplace file --> %s" % url)
+
+        # Fetch File
+        try:
+            r = requests.get(url)
+
+            if not r.status_code == 200:
+                raise HTTPError(r.status_code)
+            utils.write_local_file(dest, r.text)
+            success = True
+        except Exception as ex:
+            self._console.error(f"Unable to fetch Marketplace file ({type(ex).__name__} --> {str(ex)})")
+
+        return success
 
     def test(self):
         pass

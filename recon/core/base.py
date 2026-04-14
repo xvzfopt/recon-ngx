@@ -94,7 +94,6 @@ class Recon(framework.Framework):
     def start(self, mode, workspace='default'):
         # initialize framework components
         self._mode = framework.Framework._mode = mode
-        self._init_global_options()
         self._init_home()
         self._init_workspace(workspace)
         self._check_version()
@@ -105,7 +104,6 @@ class Recon(framework.Framework):
     #==================================================
     # SUPPORT METHODS
     #==================================================
-
     def _init_global_options(self):
         self.options = self._global_options
         self.options.initialise_global_options(self._version)
@@ -183,7 +181,6 @@ class Recon(framework.Framework):
     #==================================================
     # WORKSPACE METHODS
     #==================================================
-
     def _init_workspace(self, name):
         if not name:
             return
@@ -216,58 +213,8 @@ class Recon(framework.Framework):
         return snapshots
 
     #==================================================
-    # MODULE METHODS
-    #==================================================
-    def _request_file_from_repo(self, path):
-        resp = self.request('GET', urljoin(self.repo_url, path))
-        if resp.status_code != 200:
-            raise framework.FrameworkException(f"Invalid response from module repository ({resp.status_code}).")
-        return resp
-
-    def _install_module(self, path):
-        # download supporting data files
-        downloads = {}
-        files = self._mm.get_module_from_index(path).get('files', [])
-        for filename in files:
-            try:
-                resp = self._request_file_from_repo('/'.join(['data', filename]))
-            except:
-                self.console.error(f"Supporting file download for {path} failed: ({filename})")
-                self.console.error('Module installation aborted.')
-                raise
-            abs_path = os.path.join(self.data_path, filename)
-            downloads[abs_path] = resp.text
-        # download the module
-        rel_path = '.'.join([path, 'py'])
-        try:
-            resp = self._request_file_from_repo('/'.join(['modules', rel_path]))
-        except:
-            self.console.error(f"Module installation failed: {path}")
-            raise
-        abs_path = os.path.join(self.mod_path, rel_path)
-        downloads[abs_path] = resp.text
-        # install the module
-        for abs_path, content in downloads.items():
-            utils.write_local_file(abs_path, content)
-        self.console.output(f"Module installed: {path}")
-
-    def _remove_module(self, path):
-        # remove the module
-        rel_path = '.'.join([path, 'py'])
-        abs_path = os.path.join(self.mod_path, rel_path)
-        os.remove(abs_path)
-        # remove supporting data files
-        files = self._mm.get_module_from_index(path).get('files', [])
-        for filename in files:
-            abs_path = os.path.join(self.data_path, filename)
-            if os.path.exists(abs_path):
-                os.remove(abs_path)
-        self.console.output(f"Module removed: {path}")
-
-    #==================================================
     # COMMAND METHODS
     #==================================================
-
     def do_index(self, params):
         '''Creates a module index (dev only)'''
         mod_path, file_name = self._parse_params(params)
@@ -372,7 +319,7 @@ class Recon(framework.Framework):
         modules = [m for m in self._mm.get_module_index() if params in m['path'] or params == 'all']
         if modules:
             for module in modules:
-                self._install_module(module['path'])
+                self._mm.install_module(module['path'])
             self._do_modules_reload('')
         else:
             self.console.error('Invalid module path.')
@@ -382,13 +329,21 @@ class Recon(framework.Framework):
         if not params:
             self._help_marketplace_remove()
             return
-        modules = [m for m in self._mm.get_module_index() if m['status'] in ('installed', 'disabled') and (params in m['path'] or params == 'all')]
-        if modules:
-            for module in modules:
-                self._remove_module(module['path'])
+        target_modules = params.split(" ")
+
+        # Process Modules
+        modules_to_remove = []
+        for module in self._mm.get_module_index():
+            if self._mm.is_installed(module["path"]) and (module["path"] in target_modules or "all" in target_modules):
+                modules_to_remove.append(module["path"])
+
+        # Remove Modules
+        if modules_to_remove:
+            for module in modules_to_remove:
+                self._mm.uninstall_module(module)
             self._do_modules_reload('')
         else:
-            self.console.error('Invalid module path.')
+            self.console.error('Invalid module path --> %s' % params)
 
     def do_workspaces(self, params):
         '''Manages workspaces'''
