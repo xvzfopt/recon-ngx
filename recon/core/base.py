@@ -16,6 +16,7 @@ import shutil
 import sys
 import yaml
 import builtins
+import sys
 
 # =====================================================================================
 # Imports: Internal
@@ -55,7 +56,7 @@ class Recon(framework.Framework):
 
     repo_url = 'https://raw.githubusercontent.com/lanmaster53/recon-ng-modules/master/'
 
-    def __init__(self, version, author, check=True, analytics=True, marketplace=True, accessible=False):
+    def __init__(self, version, author, verbosity, check=True, analytics=True, marketplace=True, accessible=False):
         framework.Framework.__init__(self, 'base', version, author)
         self._name = 'recon-ng'
         self._prompt_template = '{}[{}] > '
@@ -72,6 +73,17 @@ class Recon(framework.Framework):
         self.mod_path = framework.Framework.mod_path = os.path.join(self.home_path, 'modules')
         self.data_path = framework.Framework.data_path = os.path.join(self.home_path, 'data')
         self.spaces_path = framework.Framework.spaces_path = os.path.join(self.home_path, 'workspaces')
+
+        # =====================================================================================
+        # Validate Any Additional Parameters
+        # =====================================================================================
+        if verbosity not in [0, 1, 2]:
+            self.console.error("Invalid verbosity level '%s'. Must be 0, 1, or 2." % verbosity)
+            sys.exit(1)
+
+        # Initialise Global Options
+        self._init_global_options()
+        self.options["verbosity"] = verbosity
 
         # Initialise Workspace Manager
         self._wm = WorkspaceManager(self.spaces_path, self.console)
