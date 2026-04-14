@@ -37,6 +37,20 @@ class Options(dict):
         self.init_option('user-agent', f"Recon-ng/v{version.split('.')[0]}", True, 'user-agent string')
         self.init_option('verbosity', 1, True, 'verbosity level (0 = minimal, 1 = verbose, 2 = debug)')
 
+    def register_option(self, name, value, required, description):
+        '''
+        Registers a new option
+
+        :param name: The name of the options
+        :type name: str
+        :param value: The option's initial value
+        :type value: str
+        :param required: Whether the option is required
+        :type required: bool
+        :param description: The option's description
+        :type description: str
+        '''
+        self.init_option(name=name, value=value, required=required, description=description)
 
     def __getitem__(self, name):
         name = self.__keytransform__(name)
