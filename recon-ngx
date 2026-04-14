@@ -15,6 +15,7 @@ sys.dont_write_bytecode = True
 # Imports: Internal
 # =====================================================================================
 from recon.core import base
+from recon.core import ReconNGXFramework
 from recon.core.output import ConsoleOutput
 
 # =====================================================================================
@@ -38,7 +39,7 @@ def get_version():
 
     # Validate
     if not version:
-        raise ValueError("Could not parse Recon-ngX version file.")
+        raise ValueError("Could not parse Recon-NGX version file.")
 
     return version
 
@@ -69,31 +70,35 @@ def launch_ui(args):
         "version": get_version(),
         "author": __AUTHOR__,
         "verbosity": args.verbosity,
-        'check': args.check if not args.stealth else False,
+        'stealth': args.check if not args.stealth else False,
         'analytics': args.analytics if not args.stealth else False,
         'marketplace': args.marketplace if not args.stealth else False,
         'accessible' : args.accessible,
     }
 
-    # instantiate framework
-    recon_ngx = base.Recon(**flags)
-    # check for and run script session
-    if args.script_file:
-        recon_ngx._do_script_execute(args.script_file)
-    # launch the interactive session
-    options = [base.Mode.CONSOLE]
-    if args.workspace:
-        options.append(args.workspace)
+
+    # Initialise Recon-NGX
+    recon = ReconNGXFramework(**flags)
+
+    # # check for and run script session
+    # if args.script_file:
+    #     recon_ngx._do_script_execute(args.script_file)
+    # =====================================================================================
+    # !!! Launch Recon-NGX !!!
+    # =====================================================================================
     try:
-        recon_ngx.start(*options)
+        options = []
+        if args.workspace:
+            options.append(args.workspace)
+        recon.start(*options)
     except KeyboardInterrupt:
-        print('')
+        print("")
 
 # =====================================================================================
-# Recon-ng eXtended --> MAIN
+# Recon-NGX --> MAIN
 # =====================================================================================
 if __name__ == "__main__":
-    description = f"%(prog)s - {base.__author__}"
+    description = f"%(prog)s - {__AUTHOR__}"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-w', help='Load/create a workspace', metavar='workspace', dest='workspace', action='store')
     parser.add_argument('-r', help='Load commands from a resource file', metavar='filename', dest='script_file', action='store')
