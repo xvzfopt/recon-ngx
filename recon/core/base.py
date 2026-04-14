@@ -54,8 +54,6 @@ builtins.print = spool_print
 
 class Recon(framework.Framework):
 
-    repo_url = 'https://raw.githubusercontent.com/lanmaster53/recon-ng-modules/master/'
-
     def __init__(self, version, author, verbosity, check=True, analytics=True, marketplace=True, accessible=False):
         framework.Framework.__init__(self, 'base', version, author)
         self._name = 'recon-ng'
@@ -87,7 +85,7 @@ class Recon(framework.Framework):
         self.options["verbosity"] = verbosity
 
         # Initialise Workspace Manager
-        self._wm = WorkspaceManager(self.spaces_path, self.console)
+        self._wm = WorkspaceManager(self.spaces_path, self.console, self._modulename)
 
         # Initialise Module Manager
         self._mm = ModuleManager(self.home_path, self.console)
@@ -471,7 +469,7 @@ class Recon(framework.Framework):
             self._help_modules_load()
             return
         # finds any modules that contain params
-        modules = self._match_modules(params)
+        modules = self._mm.find_matching_installed_modules(params)
         # notify the user if none or multiple modules are found
         if len(modules) != 1:
             if not modules:
@@ -629,6 +627,10 @@ class Recon(framework.Framework):
 
     def _complete_modules_reload(self, text, *ignored):
         return []
+
+    def _complete_modules_load(self, text, *ignored):
+        return [x for x in self._mm.get_loaded_modules() if x.startswith(text)]
+
 
 #=================================================
 # SUPPORT CLASSES
