@@ -19,11 +19,12 @@ from recon.utils import validators
 
 class BaseModule(framework.Framework):
 
-    def __init__(self, params):
+    def __init__(self, params, manager):
         framework.Framework.__init__(self, params)
         self.options = framework.Options()
         # update the meta dictionary by merging the class variable with any frontmatter
         self.meta = self._merge_dicts(self.meta, self._parse_frontmatter())
+        self._mm = manager
         # register a data source option if a default query is specified in the module
         if self.meta.get('query'):
             self._default_source = self.meta.get('query')
@@ -48,7 +49,7 @@ class BaseModule(framework.Framework):
                 # to load.
                 self.keys[key] = self.get_key(key)
                 if not self.keys.get(key):
-                    self.error(f"'{key}' key not set. {self._modulename.split('/')[-1]} module will likely fail at runtime. See 'keys add'.")
+                    self.console.error(f"'{key}' key not set. {self._modulename.split('/')[-1]} module will likely fail at runtime. See 'keys add'.")
         self._reload = 0
 
     #==================================================
@@ -85,7 +86,7 @@ class BaseModule(framework.Framework):
                 if key_data.get(key):
                     self.add_key(key, key_data.get(key))
             except:
-                self.error(f"Corrupt key file. Manual migration of '{key}' required.")
+                self.console.error(f"Corrupt key file. Manual migration of '{key}' required.")
 
     def ascii_sanitize(self, s):
         return ''.join([char for char in s if ord(char) in [10,13] + range(32, 126)])
@@ -130,7 +131,7 @@ class BaseModule(framework.Framework):
         validator_type = self.meta.get('validator')
         if not validator_type:
             # passthru, no validator required
-            self.debug('No validator required.')
+            self.console.debug('No validator required.')
             return
         validator = None
         validator_name = validator_type.capitalize() + 'Validator'
@@ -139,12 +140,12 @@ class BaseModule(framework.Framework):
                 validator = getattr(validators, validator_name)()
         if not validator:
             # passthru, no validator defined
-            self.debug('No validator defined.')
+            self.console.debug('No validator defined.')
             return
         inputs = self._get_source(self.options['source'], self._default_source)
         for _input in inputs:
             validator.validate(_input)
-            self.debug('All inputs validated.')
+            self.console.debug('All inputs validated.')
 
     #==================================================
     # OPTIONS METHODS
@@ -228,7 +229,7 @@ class BaseModule(framework.Framework):
             print(f"{name} => {value}")
             self._save_config(name, 'base', self._global_options)
         else:
-            self.error('Invalid option name.')
+            self.console.error('Invalid option name.')
 
     def _do_goptions_unset(self, params):
         '''Unsets a global context option'''
@@ -240,7 +241,7 @@ class BaseModule(framework.Framework):
         if name in self._global_options:
             self._do_goptions_set(' '.join([name, 'None']))
         else:
-            self.error('Invalid option name.')
+            self.console.error('Invalid option name.')
 
     def _do_modules_load(self, params):
         '''Loads a module'''
@@ -248,13 +249,13 @@ class BaseModule(framework.Framework):
             self._help_modules_load()
             return
         # finds any modules that contain params
-        modules = self._match_modules(params)
+        modules = self._mm.find_matching_installed_modules(params)
         # notify the user if none or multiple modules are found
         if len(modules) != 1:
             if not modules:
-                self.error('Invalid module name.')
+                self.console.error('Invalid module name.')
             else:
-                self.output(f"Multiple modules match '{params}'.")
+                self.console.output(f"Multiple modules match '{params}'.")
                 self._list_modules(modules)
             return
         # compensation for stdin being used for scripting and loading
@@ -315,9 +316,9 @@ class BaseModule(framework.Framework):
                 inputs = self._get_source(self.options['source'], self._default_source)
                 self.table([[x] for x in inputs], header=['Module Inputs'])
             except Exception as e:
-                self.output(e.__str__())
+                self.console.output(e.__str__())
         else:
-            self.output('Source option not available for this module.')
+            self.console.output('Source option not available for this module.')
 
     def run(self):
         self._validate_options()
@@ -343,13 +344,13 @@ class BaseModule(framework.Framework):
         except KeyboardInterrupt:
             print('')
         except (Timeout, socket.timeout):
-            self.print_exception()
-            self.error('A request took too long to complete. If the issue persists, increase the global TIMEOUT option.')
+            self.console.print_exception()
+            self.console.error('A request took too long to complete. If the issue persists, increase the global TIMEOUT option.')
         except (framework.FrameworkException, validators.ValidationException):
-            self.print_exception()
+            self.console.print_exception()
         except Exception:
-            self.print_exception()
-            self.error('Something broken? See https://github.com/lanmaster53/recon-ng/wiki/Troubleshooting#issue-reporting.')
+            self.console.print_exception()
+            self.console.error('Something broken? See https://github.com/lanmaster53/recon-ng/wiki/Troubleshooting#issue-reporting.')
         finally:
             # print module summary
             if self._summary_counts:
