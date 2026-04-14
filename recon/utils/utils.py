@@ -6,6 +6,7 @@ import string
 import json
 import os
 import sys
+import re
 from contextlib import contextmanager
 
 # =====================================================================================
@@ -91,3 +92,46 @@ def add_to_path(path):
     finally:
         sys.path.remove(path)
 
+
+def is_hash(hashstr):
+    '''
+    Checks if the specified string is a valid hash
+
+    :param hashstr: The string to check
+    :type hashstr: str
+    :returns: True if the string is a valid hash, False otherwise
+    :rtype: bool
+    '''
+    hashdict = [
+        {'pattern': r'^[a-fA-F0-9]{32}$', 'type': 'MD5'},
+        {'pattern': r'^[a-fA-F0-9]{16}$', 'type': 'MySQL'},
+        {'pattern': r'^\*[a-fA-F0-9]{40}$', 'type': 'MySQL5'},
+        {'pattern': r'^[a-fA-F0-9]{40}$', 'type': 'SHA1'},
+        {'pattern': r'^[a-fA-F0-9]{56}$', 'type': 'SHA224'},
+        {'pattern': r'^[a-fA-F0-9]{64}$', 'type': 'SHA256'},
+        {'pattern': r'^[a-fA-F0-9]{96}$', 'type': 'SHA384'},
+        {'pattern': r'^[a-fA-F0-9]{128}$', 'type': 'SHA512'},
+        {'pattern': r'^\$[PH]{1}\$.{31}$', 'type': 'phpass'},
+        {'pattern': r'^\$2[ya]?\$.{56}$', 'type': 'bcrypt'},
+    ]
+
+    # Check String
+    for hashitem in hashdict:
+        if re.match(hashitem['pattern'], hashstr):
+            return hashitem['type']
+    return False
+
+def is_writeable(path):
+    '''
+    Checks if the specified file is writeable
+
+    :param path: The file to check
+    :returns: True if the file is writeable, False otherwise
+    :rtype: bool
+    '''
+    try:
+        fp = open(path, 'a')
+        fp.close()
+        return True
+    except IOError:
+        return False

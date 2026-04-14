@@ -118,32 +118,6 @@ class Framework(cmd.Cmd):
     #==================================================
     # SUPPORT METHODS
     #==================================================
-    def is_hash(self, hashstr):
-        hashdict = [
-            {'pattern': r'^[a-fA-F0-9]{32}$', 'type': 'MD5'},
-            {'pattern': r'^[a-fA-F0-9]{16}$', 'type': 'MySQL'},
-            {'pattern': r'^\*[a-fA-F0-9]{40}$', 'type': 'MySQL5'},
-            {'pattern': r'^[a-fA-F0-9]{40}$', 'type': 'SHA1'},
-            {'pattern': r'^[a-fA-F0-9]{56}$', 'type': 'SHA224'},
-            {'pattern': r'^[a-fA-F0-9]{64}$', 'type': 'SHA256'},
-            {'pattern': r'^[a-fA-F0-9]{96}$', 'type': 'SHA384'},
-            {'pattern': r'^[a-fA-F0-9]{128}$', 'type': 'SHA512'},
-            {'pattern': r'^\$[PH]{1}\$.{31}$', 'type': 'phpass'},
-            {'pattern': r'^\$2[ya]?\$.{56}$', 'type': 'bcrypt'},
-        ]
-        for hashitem in hashdict:
-            if re.match(hashitem['pattern'], hashstr):
-                return hashitem['type']
-        return False
-
-    def _is_writeable(self, filename):
-        try:
-            fp = open(filename, 'a')
-            fp.close()
-            return True
-        except IOError:
-            return False
-
     def _parse_rowids(self, rowids):
         xploded = []
         rowids = [x.strip() for x in rowids.split(',')]
@@ -316,7 +290,7 @@ class Framework(cmd.Cmd):
 
         # account for hashes provided in the password field
         if password and not _hash:
-            _type = self.is_hash(password)
+            _type = utils.is_hash(password)
             if _type:
                 _hash = password
                 password = None
@@ -961,7 +935,7 @@ class Framework(cmd.Cmd):
             if not filename:
                 self._help_script_record()
                 return
-            if not self._is_writeable(filename):
+            if not utils.is_writeable(filename):
                 self.console.output(f"Cannot record commands to '{filename}'.")
             else:
                 Framework._record = filename
@@ -1013,7 +987,7 @@ class Framework(cmd.Cmd):
             if not filename:
                 self._help_spool_start()
                 return
-            if not self._is_writeable(filename):
+            if not utils.is_writeable(filename):
                 self.console.output(f"Cannot spool output to '{filename}'.")
             else:
                 Framework._spool = codecs.open(filename, 'ab', encoding='utf-8')

@@ -77,6 +77,7 @@ class Recon(framework.Framework):
         # =====================================================================================
         # Validate Any Additional Parameters
         # =====================================================================================
+        # Check Verbosity Level
         if verbosity not in [0, 1, 2]:
             self.console.error("Invalid verbosity level '%s'. Must be 0, 1, or 2." % verbosity)
             sys.exit(1)

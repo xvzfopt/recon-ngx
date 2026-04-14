@@ -106,6 +106,6 @@ if __name__ == "__main__":
     parser.add_argument('--version', help='Displays the current version', action='version', version=get_version())
 
     # =====================================================================================
-    # !!! START RECON-NGX !!!
+    # !!! START Recon-NGX !!!
     # =====================================================================================
     launch_ui(parser.parse_args())
