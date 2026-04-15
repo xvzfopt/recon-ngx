@@ -1,4 +1,4 @@
 # =====================================================================================
 # Expose Libraries and Modules
 # =====================================================================================
-from .recon_ngx import ReconNGXFramework
+from .recon_ngx import ReconNGXApp

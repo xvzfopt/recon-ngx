@@ -5,7 +5,6 @@ import os
 import sys
 import re
 import requests
-from cmd import Cmd
 from requests.exceptions import HTTPError
 
 # =====================================================================================
@@ -17,13 +16,15 @@ from recon.core.db import KeysDB
 from recon.core.output import ConsoleOutput
 from recon.core._module import ModuleManager
 from recon.core.workspace import WorkspaceManager
+from recon.core.interpreter import ModuleInterpreter
+from recon.core.interpreter import FrameworkInterpreter
 
 # =====================================================================================
-# Recon-NGX Framework
+# Recon-NGX Application Class
 # =====================================================================================
-class ReconNGXFramework(Cmd):
+class ReconNGXApp:
     '''
-    Recon-NGX Core Framework
+    Recon-NGX Core App
     '''
 
     # =====================================================================================
@@ -35,7 +36,7 @@ class ReconNGXFramework(Cmd):
     # Functions
     # =====================================================================================
     def __init__(self, version, author, verbosity, stealth, analytics, marketplace, accessible) :
-        super(ReconNGXFramework, self).__init__()
+        super(ReconNGXApp, self).__init__()
 
         # Initialise Base Properties
         self._name = "recon-ngx"
@@ -50,6 +51,10 @@ class ReconNGXFramework(Cmd):
 
         # Initialise Console Output
         self._console = ConsoleOutput(self._g_options)
+
+        # Interpreter instances
+        self._f_interpreter = FrameworkInterpreter(self, self._console)
+        self._m_interpreter = None
 
         # Set Paths
         self._app_path          = sys.path[0]
@@ -76,67 +81,27 @@ class ReconNGXFramework(Cmd):
         # Run Version Check
         self._check_version()
 
+
     def start(self, workspace_name="default"):
         '''
         Starts Recon-NGX
         '''
         self.set_workspace(workspace_name)
-        self._console.print_banner(self._version, self._author, self._module_manager.get_module_categories())
+        self._f_interpreter.start()
 
-        # !!! MAIN LOOP !!!
-        self.cmdloop()
 
-    # =====================================================================================
-    # Command Handler Functions
-    # =====================================================================================
-    def default(self, line):
-        self._console.error("Invalid command: %s" % line)
-
-    def precmd(self, line):
+    def open_module(self, fqn):
         '''
-        !!! CMD PROCESSOR !!!
-        Preprocess function. Performs preprocessing and modification of user input
+        Opens the specified module
 
-        :param line: The line that was entered by the end-user
-        :type line: str
+        :param fqn: The module's Fully Qualified Name (FQN)
+        :type fqn: str
         '''
-        return line
+        module = self._module_manager.get_module_instance(fqn)
+        self._m_interpreter = ModuleInterpreter(self, self._console, module)
 
-
-    def onecmd(self, line):
-        '''
-        !!! CMD PROCESSOR !!!
-        Main Command/Input processing function. Handles input and delegates further processing
-
-        :param line: The line that was entered by the end-user
-        :type line: str
-        '''
-        # Parse line
-        cmd, arg, line = self.parseline(line)
-
-        # Input: Empty Line
-        if not line or not cmd:
-            return self.emptyline()
-
-        # Find target function
-        try:
-            func = getattr(self, "do_%s" % cmd)
-        except AttributeError:
-            return self.default(line)
-
-        # Delegate Action to target function
-        try:
-            return func(arg)
-        except Exception:
-            self._console.print_exception()
-
-
-    # =====================================================================================
-    # Action/Do Functions
-    # =====================================================================================
-    def do_exit(self, params):
-        self._exit = 1
-        return True
+        while True:
+            self._m_interpreter.start()
 
     # =====================================================================================
     # Getters
@@ -163,6 +128,79 @@ class ReconNGXFramework(Cmd):
 
         return remote_ver
 
+    def get_version(self):
+        '''
+        Gets the Recon-NGX app version
+
+        :returns: The Recon-NGX app version number
+        :rtype: str
+        '''
+        return self._version
+
+    def get_author(self):
+        '''
+        Gets the Recon-NGX app version
+
+        :returns: The Recon-NGX app author name
+        :rtype: str
+        '''
+        return self._author
+
+    def get_app_name(self):
+        '''
+        Returns the Recon-NGX application name
+
+        :returns: The Recon-NGX application name
+        :rtype: str
+        '''
+        return self._name
+
+    def get_module_manager(self):
+        '''
+        Gets the Module Manager instance
+
+        :returns: The ModuleManager instance
+        :rtype: ModuleManager
+        '''
+        return self._module_manager
+
+    def get_workspace_manager(self):
+        '''
+        Gets the Workspace Manager instance
+
+        :returns: The Workspace Manager instance
+        :rtype: WorkspaceManager
+        '''
+        return self._workspace_manager
+
+    def get_current_workspace(self):
+        '''
+        Returns the current Recon-NGX workspace instance
+
+        :returns: The currently active Recon-NGX workspace instance
+        :rtype: Workspace
+        '''
+        return self._workspace
+
+    def get_console(self):
+        '''
+        Gets the app's ConsoleOutput instance
+
+        :returns: The app's ConsoleOutput instance
+        :rtype: ConsoleOutput
+        '''
+        return self._console
+
+    def is_marketplace_enabled(self):
+        '''
+        Checks if the Marketplace is currently enabled
+
+        :returns: True if the Marketplace is enabled, otherwise False
+        :rtype: bool
+        '''
+        # TODO TODO TODO
+        return True
+
     # =====================================================================================
     # Setters
     # =====================================================================================
@@ -183,7 +221,7 @@ class ReconNGXFramework(Cmd):
             self._workspace = self._workspace_manager.get_workspace(name)
 
         # Update Prompt
-        self.prompt = "%s[%s] " % (self._base_prompt, name)
+        self._f_interpreter.set_workspace_name(self._workspace.get_name())
 
         # Load Workspace configuration
         workspace_config = self._workspace.get_config_data()
@@ -193,6 +231,7 @@ class ReconNGXFramework(Cmd):
 
         # Reload Modules
         self._module_manager.load_modules()
+        return True
 
     # =====================================================================================
     # Internal Functions
@@ -219,5 +258,3 @@ class ReconNGXFramework(Cmd):
             self._console.alert('Please consider updating before further use.')
             self._console.output(f"Remote version:  {remote_ver}")
             self._console.output(f"Local version:   {self._version}")
-
-

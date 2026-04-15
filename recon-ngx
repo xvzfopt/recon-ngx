@@ -15,7 +15,7 @@ sys.dont_write_bytecode = True
 # Imports: Internal
 # =====================================================================================
 from recon.core import base
-from recon.core import ReconNGXFramework
+from recon.core import ReconNGXApp
 from recon.core.output import ConsoleOutput
 
 # =====================================================================================
@@ -78,7 +78,7 @@ def launch_ui(args):
 
 
     # Initialise Recon-NGX
-    recon = ReconNGXFramework(**flags)
+    recon = ReconNGXApp(**flags)
 
     # # check for and run script session
     # if args.script_file:
