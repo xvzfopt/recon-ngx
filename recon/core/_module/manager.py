@@ -42,7 +42,7 @@ class ModuleManager:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, home_path, console):
+    def __init__(self, home_path, console, framework):
         '''
         Constructor
 
@@ -55,6 +55,7 @@ class ModuleManager:
         self._module_index = []
         self._loaded_modules = {}
         self._module_categories = {}
+        self._framework = framework
 
         # Build Paths
         self._home_path = home_path
@@ -189,7 +190,7 @@ class ModuleManager:
             __import__(mod_info["loadname"])
 
             # Add the module to the framework's loaded modules
-            self._loaded_modules[mod_info["dispname"]] = sys.modules[mod_info["loadname"]].Module(mod_info["dispname"], self)
+            self._loaded_modules[mod_info["dispname"]] = sys.modules[mod_info["loadname"]].Module(mod_info["name"], mod_info["dispname"], self._framework)
             self._add_module_to_category(mod_info["category"], mod_info["dispname"])
 
             # Success
@@ -344,6 +345,15 @@ class ModuleManager:
     # =====================================================================================
     # Getters
     # =====================================================================================
+    def get_modules_path(self):
+        '''
+        Gets the path to the modules directory
+
+        :returns: The path to the modules directory
+        :rtype: string
+        '''
+        return self._modules_path
+
     def get_module_categories(self):
         '''
         Gets the dictionary of module categories and their loaded modules
@@ -370,6 +380,18 @@ class ModuleManager:
         :rtype: dict
         '''
         return self._module_index
+
+    def get_module_instance(self, path):
+        '''
+        Gets the instance of the specified module, if it exists
+
+        :returns: The matching Module instance, or None if not found
+        :rtype: BaseModule, None
+        '''
+        instance = None
+        if path in self.get_loaded_modules():
+            instance = self.get_loaded_modules()[path]
+        return instance
 
     def get_module_from_index(self, path):
         '''
