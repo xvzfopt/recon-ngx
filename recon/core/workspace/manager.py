@@ -8,7 +8,7 @@ import shutil
 # Imports: Internal
 # =====================================================================================
 from .workspace import Workspace
-from .db import WorkspaceDB
+from recon.core.db import WorkspaceDB
 
 # =====================================================================================
 # Workspace Manager Class
@@ -25,15 +25,18 @@ class WorkspaceManager:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, spaces_path, output):
+    def __init__(self, spaces_path, output, name):
         '''
         Constructor
 
         :param spaces_path: Path to the workspaces folder
         :type spaces_path: str
+        :param name: The Workspace Name
+        :type name: str
         '''
         self._spaces_path = spaces_path
         self._output = output
+        self._name = name
 
     def create_workspace(self, name):
         '''
@@ -50,7 +53,7 @@ class WorkspaceManager:
         os.makedirs(wpath)
 
         # Initialise Database
-        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output)
+        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output, self._name)
 
         # Initialise Workspace
         workspace = Workspace(name, wpath, db)
@@ -85,7 +88,7 @@ class WorkspaceManager:
         wpath = os.path.join(self._spaces_path, name)
 
         # Initialise Database
-        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output)
+        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output, self._name)
 
         # Initialise Workspace
         workspace = Workspace(name, wpath, db)
