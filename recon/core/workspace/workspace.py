@@ -63,6 +63,40 @@ class Workspace:
 
         return config_data
 
+    def set_config_property(self, option_name, module='base', options=None):
+        '''
+        Sets a specific configuration property and writes it to disk
+        '''
+        # Initialise config file
+        open(self._config_path, 'a').close()
+
+        # Read existing contents
+        config_data = {}
+        with open(self._config_path) as config_file:
+            try:
+                config_data = json.loads(config_file.read())
+            except ValueError:
+                pass
+
+        # Create a container for the current module
+        if module not in config_data:
+            config_data[module] = {}
+
+        # Set the new option value in the config
+        config_data[module][option_name] = options[option_name]
+
+        # Remove the option if it has been unset
+        if config_data[module][option_name] is None:
+            del config_data[module][option_name]
+
+        # Remove the module container if it is empty
+        if not config_data[module]:
+            del config_data[module]
+
+        # write the new config data to the config file
+        with open(self._config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=4)
+
     def get_mod_time(self):
         '''
         Gets the Modification Time of this workspace
