@@ -46,14 +46,15 @@ class ReconNGXApp:
         self._base_prompt = "[%s]" % self._name
 
         # Initialise Global Options
-        self._g_options = Options()
-        self._g_options.initialise_global_options(self._version)
+        self._options = Options()
+        self._options.initialise_global_options(self._version)
 
         # Initialise Console Output
-        self._console = ConsoleOutput(self._g_options)
+        self._console = ConsoleOutput(self._options)
 
         # Interpreter instances
         self._f_interpreter = FrameworkInterpreter(self, self._console)
+        self._active_context = self._f_interpreter
         self._m_interpreter = None
 
         # Set Paths
@@ -99,9 +100,20 @@ class ReconNGXApp:
         '''
         module = self._module_manager.get_module_instance(fqn)
         self._m_interpreter = ModuleInterpreter(self, self._console, module)
+        self._active_context = self._m_interpreter
 
         while True:
-            self._m_interpreter.start()
+            # On KeyboardInterrupt, either go back or exit app
+            try:
+                self._m_interpreter.start()
+            except KeyboardInterrupt:
+                print('')
+
+            # Module Interpreter exited
+            if self._m_interpreter.get_status() == ModuleInterpreter.STATUS_EXITED:
+                return True
+
+            break
 
     # =====================================================================================
     # Getters
@@ -191,6 +203,15 @@ class ReconNGXApp:
         '''
         return self._console
 
+    def get_options(self):
+        '''
+        Gets the current Global Options
+
+        :returns: Current Global Options dict
+        :rtype: dict
+        '''
+        return self._options
+
     def is_marketplace_enabled(self):
         '''
         Checks if the Marketplace is currently enabled
@@ -225,9 +246,9 @@ class ReconNGXApp:
 
         # Load Workspace configuration
         workspace_config = self._workspace.get_config_data()
-        for key in self._g_options:
+        for key in self._options:
             if key in workspace_config:
-                self._g_options[key] = workspace_config[key]
+                self._options[key] = workspace_config[key]
 
         # Reload Modules
         self._module_manager.load_modules()
