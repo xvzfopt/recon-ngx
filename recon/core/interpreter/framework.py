@@ -232,6 +232,125 @@ class FrameworkInterpreter(BaseInterpreter):
             if params == self._recon.get_current_workspace().get_name():
                 self._recon.set_workspace('default')
 
+
+    # =====================================================================================
+    # Auto-completion Functions: marketplace
+    # =====================================================================================
+    def complete_marketplace(self, text, line, *ignored):
+        '''
+        Auto-completion for marketplace commands
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('marketplace')
+
+        # If directly matching sub-command found, auto-complete that
+        if arg in subs:
+            return getattr(self, '_complete_marketplace_'+arg)(text, params)
+
+        # Else return all available matching commands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_marketplace_refresh(self, text, *ignored):
+        '''
+        Auto-completion for marketplace command: refresh
+        Placeholder: currently we have nothing more to provide for this command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        return []
+    # Auto-complete marketplace "search" in same way as refresh
+    _complete_marketplace_search = _complete_marketplace_refresh
+
+    def _complete_marketplace_info(self, text, *ignored):
+        '''
+        Auto-completion for marketplace command: info
+        Searches all modules that match
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        mm = self._recon.get_module_manager()
+        return [x['path'] for x in mm.get_module_index() if x['path'].startswith(text)]
+    # Auto-complete marketplace "install" in same way as info
+    _complete_marketplace_install = _complete_marketplace_info
+
+    def _complete_marketplace_remove(self, text, *ignored):
+        '''
+        Auto-completion for marketplace command: remove
+        Searches all modules that match, and are currently installed
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        mm = self._recon.get_module_manager()
+        return [x['path'] for x in mm.get_module_index() if x['status'] == mm.MODULE_STATUS_INSTALLED and x['path'].startswith(text)]
+
+    # =====================================================================================
+    # Auto-completion Functions: workspaces
+    # =====================================================================================
+    def complete_workspaces(self, text, line, *ignored):
+        '''
+        Auto-completion for workspaces commands
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('workspaces')
+
+        # If directly matching sub-command found, auto-complete that
+        if arg in subs:
+            return getattr(self, '_complete_workspaces_'+arg)(text, params)
+
+        # Else return all available matching commands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_workspaces_list(self, text, *ignored):
+        '''
+        Auto-completion for workspaces command: list
+        Placeholder: currently we have nothing more to provide for this command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        return []
+    # Auto-complete workspaces "create" in same way as list
+    _complete_workspaces_create = _complete_workspaces_list
+
+    def _complete_workspaces_load(self, text, *ignored):
+        '''
+        Auto-completion for workspaces command: load
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        wm = self._recon.get_workspace_manager()
+        return [x.get_name() for x in wm.get_workspaces() if x.get_name().startswith(text)]
+    # Auto-complete workspaces "remove" command in same way as load
+    _complete_workspaces_remove = _complete_workspaces_load
+
     # =====================================================================================
     # Command Help Functions
     # =====================================================================================
