@@ -1,6 +1,10 @@
 # =====================================================================================
 # Imports: External
 # =====================================================================================
+import os
+import re
+import shutil
+from datetime import datetime
 
 # =====================================================================================
 # Imports: Internal
@@ -33,6 +37,62 @@ class WorkspaceDB(ReconNGXDatabase):
     # =====================================================================================
     # Insert Function
     # =====================================================================================
+
+    # =====================================================================================
+    # Snapshot Functions
+    # =====================================================================================
+    def take_snapshot(self):
+        '''
+        Takes a snapshot of the database in its current state
+        '''
+
+        snapshot_fn = "snapshot_%s.db" % self._generate_snapshot_timestamp()
+        workspace_folder = os.path.dirname(self._path)
+        dest = os.path.join(workspace_folder, snapshot_fn)
+        shutil.copyfile(self._path, dest)
+        self._console.output("Snapshot created: %s" % snapshot_fn)
+
+    def get_snapshots(self):
+        '''
+        Gets all snapshots for this database
+
+        :returns: List of snapshots
+        :rtype: list
+        '''
+        workspace_folder = os.path.dirname(self._path)
+
+        snapshots = []
+        for f in os.listdir(workspace_folder):
+            if re.search(r'^snapshot_\d{14}.db$', f):
+                snapshots.append(f)
+        return snapshots
+
+    def load_snapshot(self, snapshot_name):
+        '''
+        Loads a snapshot for this database
+
+        :param snapshot_name: The name of the snapshot file to load
+        :type snapshot_name: str
+        '''
+
+        workspace_folder = os.path.dirname(self._path)
+        src = os.path.join(workspace_folder, snapshot_name)
+        shutil.copy(src, self._path)
+        self._console.output(f"Snapshot loaded: {snapshot_name}")
+
+    def remove_snapshot(self, snapshot_name):
+        '''
+        Removes/delete a snapshot for this database
+
+        :param snapshot_name: The name of the snapshot file to delete
+        :type snapshot_name: str
+        '''
+        workspace_folder = os.path.dirname(self._path)
+
+        snapshot_path = os.path.join(workspace_folder, snapshot_name)
+        os.remove(snapshot_path)
+        self._console.output(f"Snapshot removed: {snapshot_name}")
+
 
     # =====================================================================================
     # Internal Functions
@@ -135,3 +195,12 @@ class WorkspaceDB(ReconNGXDatabase):
         self.query('CREATE TABLE IF NOT EXISTS repositories (name TEXT, owner TEXT, description TEXT, resource TEXT, category TEXT, url TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS dashboard (module TEXT PRIMARY KEY, runs INT)')
         self.query('PRAGMA user_version = 10')
+
+    def _generate_snapshot_timestamp(self):
+        '''
+        Generates a new Snapshot timestamp
+
+        :returns: Snapshot timestamp string
+        :rtype: str
+        '''
+        return datetime.strftime(datetime.now(), '%Y%m%d%H%M%S')

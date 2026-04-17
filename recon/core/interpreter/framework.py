@@ -232,6 +232,80 @@ class FrameworkInterpreter(BaseInterpreter):
             if params == self._recon.get_current_workspace().get_name():
                 self._recon.set_workspace('default')
 
+    # =====================================================================================
+    # Command Do Function: "snapshots"
+    # =====================================================================================
+    def do_snapshots(self, params):
+        '''Manages workspace snapshots'''
+        # Check snapshots subcommand provided
+        if not params:
+            self.help_snapshots()
+            return
+
+        # Execute snapshots subcommand
+        arg, params = self._parse_params(params)
+        if arg in self._get_subcommands('snapshots'):
+            return getattr(self, '_do_snapshots_'+arg)(params)
+        else:
+            self.help_snapshots()
+
+    def _do_snapshots_list(self, params):
+        '''Lists existing database snapshots'''
+
+        # Get Snapshots for DB
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+        snapshots = db.get_snapshots()
+
+        # Display Snapshots
+        if snapshots:
+            self._console.table([[x] for x in snapshots], header=['Snapshots'])
+        else:
+            self._console.output('This workspace has no snapshots.')
+
+    def _do_snapshots_take(self, params):
+        '''Takes a snapshot of the current database'''
+
+        # Get DB
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Take snapshot
+        db.take_snapshot()
+
+    def _do_snapshots_load(self, params):
+        '''Loads an existing database snapshot'''
+
+        # Check snapshot name specified
+        if not params:
+            self._help_snapshots_load()
+            return
+
+        # Get DB
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        if params in db.get_snapshots():
+            db.load_snapshot(params)
+        else:
+            self._console.error(f"No snapshot named '{params}'.")
+
+    def _do_snapshots_remove(self, params):
+        '''Removes an existing snapshot'''
+
+        # Check snapshot name specified
+        if not params:
+            self._help_snapshots_remove()
+            return
+
+        # Get DB
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        if params in db.get_snapshots():
+            db.remove_snapshot(params)
+        else:
+            self._console.error(f"No snapshot named '{params}'.")
 
     # =====================================================================================
     # Auto-completion Functions: marketplace
@@ -340,6 +414,7 @@ class FrameworkInterpreter(BaseInterpreter):
     def _complete_workspaces_load(self, text, *ignored):
         '''
         Auto-completion for workspaces command: load
+        Searches all workspaces that match
 
         :param text: The subcommand text to auto-complete, which has been typed so far
         :type text: str
@@ -350,6 +425,62 @@ class FrameworkInterpreter(BaseInterpreter):
         return [x.get_name() for x in wm.get_workspaces() if x.get_name().startswith(text)]
     # Auto-complete workspaces "remove" command in same way as load
     _complete_workspaces_remove = _complete_workspaces_load
+
+    # =====================================================================================
+    # Auto-completion Functions: snapshots
+    # =====================================================================================
+    def complete_snapshots(self, text, line, *ignored):
+        '''
+        Auto-completion for snapshots commands
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('snapshots')
+
+        # If directly matching sub-command found, auto-complete that
+        if arg in subs:
+            return getattr(self, '_complete_snapshots_'+arg)(text, params)
+
+        # Else return all available matching commands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_snapshots_list(self, text, *ignored):
+        '''
+        Auto-completion for snapshots command: list
+        Placeholder: currently we have nothing more to provide for this command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        return []
+    # Auto-complete snapshots "take" command in the same way as list
+    _complete_snapshots_take = _complete_snapshots_list
+
+    def _complete_snapshots_load(self, text, *ignored):
+        '''
+        Auto-completion for snapshots command: load
+        Searches all snapshots for the current workspace DB that match
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        # Get DB
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        return [x for x in db.get_snapshots() if x.startswith(text)]
+    # Auto-complete snapshots "remove" in the same way as load
+    _complete_snapshots_remove = _complete_snapshots_load
 
     # =====================================================================================
     # Command Help Functions
@@ -389,6 +520,19 @@ class FrameworkInterpreter(BaseInterpreter):
     def _help_workspaces_remove(self):
         print(getattr(self, '_do_workspaces_remove').__doc__)
         print(f"{os.linesep}Usage: workspace remove <name>{os.linesep}")
+
+    def help_snapshots(self):
+        print(getattr(self, 'do_snapshots').__doc__)
+        print(f"{os.linesep}Usage: snapshots <{'|'.join(self._get_subcommands('snapshots'))}> [...]{os.linesep}")
+
+    def _help_snapshots_load(self):
+        print(getattr(self, '_do_snapshots_load').__doc__)
+        print(f"{os.linesep}Usage: snapshots load <name>{os.linesep}")
+
+    def _help_snapshots_remove(self):
+        print(getattr(self, '_do_snapshots_remove').__doc__)
+        print(f"{os.linesep}Usage: snapshots remove <name>{os.linesep}")
+
 
 
 
