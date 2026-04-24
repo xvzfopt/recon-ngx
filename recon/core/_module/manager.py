@@ -134,6 +134,17 @@ class ModuleManager:
     # =====================================================================================
     # Module Load Functions
     # =====================================================================================
+    def reload_module(self, module):
+        '''
+        Reloads a specific Module
+
+        :param module: The module to reload
+        :type module: BaseModule
+        '''
+        dirpath = os.path.dirname(os.path.join(self._modules_path, module.get_fqn()))
+        filename = module.get_name() + ".py"
+        return self._load_file_module(dirpath, filename)
+
     def load_modules(self):
         '''
         Loads locally installed modules

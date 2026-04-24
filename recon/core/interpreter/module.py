@@ -206,6 +206,11 @@ class ModuleInterpreter(BaseInterpreter):
         else:
             self._console.error('Invalid option name.')
 
+    def do_reload(self, params):
+        '''Reloads the loaded module'''
+        self._status = self.STATUS_RELOADED
+        return True
+
     # =====================================================================================
     # Auto-completion Functions: goptions
     # =====================================================================================
@@ -274,6 +279,20 @@ class ModuleInterpreter(BaseInterpreter):
     _complete_options_unset = _complete_options_set
 
     # =====================================================================================
+    # Auto-completion functions: reload
+    # =====================================================================================
+    def complete_reload(self, text, *ignored):
+        '''
+        Auto-completion for reload command
+
+        :param text: The option name to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        return []
+
+    # =====================================================================================
     # Command Help Functions
     # =====================================================================================
     def help_goptions(self):
@@ -287,6 +306,18 @@ class ModuleInterpreter(BaseInterpreter):
     def _help_goptions_unset(self):
         print(getattr(self, '_do_goptions_unset').__doc__)
         print(f"{os.linesep}Usage: goptions unset <option>{os.linesep}")
+
+    # =====================================================================================
+    # Getters
+    # =====================================================================================
+    def get_module(self):
+        '''
+        Returns the current module instance
+
+        :returns: The Module instance associated with this interpreter
+        :rtype: BaseModule
+        '''
+        return self._module
 
     # =====================================================================================
     # Internal Helpers

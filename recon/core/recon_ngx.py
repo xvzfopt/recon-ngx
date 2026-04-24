@@ -112,7 +112,14 @@ class ReconNGXApp:
             # Module Interpreter exited
             if self._m_interpreter.get_status() == ModuleInterpreter.STATUS_EXITED:
                 return True
-
+            # Module Interpreter reloaded
+            if self._m_interpreter.get_status() == ModuleInterpreter.STATUS_RELOADED:
+                self._console.output("Reloading module...")
+                module = self._m_interpreter.get_module()
+                is_loaded = self._module_manager.reload_module(module)
+                # Module reloaded successfully: don't exit back to framework
+                if is_loaded:
+                    continue
             break
 
     # =====================================================================================
