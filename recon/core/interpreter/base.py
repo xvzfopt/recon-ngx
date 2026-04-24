@@ -9,6 +9,7 @@ from cmd import Cmd
 # Imports: Internal
 # =====================================================================================
 from recon.utils import utils
+from recon.core.exceptions import *
 
 
 # =====================================================================================
@@ -234,15 +235,11 @@ class BaseInterpreter(Cmd):
     def _do_modules_load(self, params):
         '''Loads a module'''
         # # validate global options before loading the module
-        # TODO
-        # try:
-        #     self._validate_options()
-        # except framework.FrameworkException as e:
-        #     self.console.error(e)
-        #     return
-        # if not params:
-        #     self._help_modules_load()
-        #     return
+        try:
+            self._recon.validate_options()
+        except ReconNGXException as rne:
+            self._console.error("Cannot load module until Global Options are valid: " + str(rne))
+            return
 
         # Check module name was provided
         if not params:

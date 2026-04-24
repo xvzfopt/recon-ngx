@@ -1,6 +1,15 @@
 # =====================================================================================
-# Recon-ngX Exceptions
+# Base Recon-NGX Exeception
 # =====================================================================================
-class FrameworkException(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
+class ReconNGXException(Exception):
+    '''
+    Base Recon-NGX Exception
+    '''
+
+# =====================================================================================
+# Validation Exception
+# =====================================================================================
+class ValidationException(ReconNGXException):
+    '''
+    Recon-NGX Validation Exception
+    '''

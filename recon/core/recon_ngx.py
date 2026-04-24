@@ -18,6 +18,7 @@ from recon.core._module import ModuleManager
 from recon.core.workspace import WorkspaceManager
 from recon.core.interpreter import ModuleInterpreter
 from recon.core.interpreter import FrameworkInterpreter
+from recon.core.exceptions import *
 
 # =====================================================================================
 # Recon-NGX Application Class
@@ -122,6 +123,17 @@ class ReconNGXApp:
                     continue
             break
 
+
+    def validate_options(self):
+        '''
+        Validates the Global Recon-NGX options. Throws a ValidationException if validation fails.
+
+        :raises: ValidationException
+        '''
+        for option_name in self.get_options():
+            if not self.is_option_set(option_name) and self.is_option_required(option_name):
+                raise ValidationException("Value required for the '%s' option." % option_name)
+
     # =====================================================================================
     # Getters
     # =====================================================================================
@@ -218,6 +230,52 @@ class ReconNGXApp:
         :rtype: dict
         '''
         return self._options
+
+    def get_option_value(self, option_name):
+        '''
+        Gets the value of the specified option. Returns None if the option does not have a value
+        Note: This function expects that you have already checked that the option exists
+
+        :param option_name: The name of the option to retrieve the value of
+        :type option_name: str
+        :returns: The value of the specified option
+        :rtype: TODO
+        '''
+        return self.get_options()[option_name]
+
+    def is_option_set(self, option_name):
+        '''
+        Checks if the specified option is currently set
+
+        :param option_name: The name of the option to check
+        :type option_name: str
+        :returns: True if the option is currently set, otherwise False
+        :rtype: bool
+        '''
+        is_set = False
+        if option_name in self.get_options():
+            value = self.get_options()[option_name]
+
+            # If option is bool or int, then it's implicitly set
+            if type(value) in [bool, int]:
+                is_set = True
+            # Otherwise, check for a valid (non-null) value
+            else:
+                if value:
+                    is_set = True
+        return is_set
+
+    def is_option_required(self, option_name):
+        '''
+        Checks is the specified option is required
+
+        :param option_name: The name of the option to check
+        :type option_name: str
+        :returns: True if the option is required, otherwise False
+        :rtype: bool
+        '''
+        return self.get_options().required[option_name]
+
 
     def is_marketplace_enabled(self):
         '''
