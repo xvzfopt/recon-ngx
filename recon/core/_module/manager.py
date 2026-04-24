@@ -9,8 +9,8 @@ import yaml
 import re
 import sys
 import importlib
-import inspect
 import json
+from datetime import datetime
 
 from requests.exceptions import HTTPError
 from importlib.machinery import SourceFileLoader
@@ -277,7 +277,6 @@ class ModuleManager:
 
         return False
 
-
     def _add_module_to_category(self, category, mod_name):
         '''
         Adds the module to the specified category
@@ -501,6 +500,50 @@ class ModuleManager:
             self._console.error(f"Unable to fetch Marketplace file ({type(ex).__name__} --> {str(ex)})")
 
         return success
+
+    def create_modules_index(self, mod_path=""):
+        '''
+        Creates an index of the currently loaded modules (dev only)
+
+        :param mod_path: The base module path for modules to include in the index, e.g. "reporting"
+        :type mod_path: str, optional
+        :returns: The produced index
+        :rype: dict
+        '''
+        index = []
+
+        # Find matching modules
+        modules = []
+        for fqn in self.get_loaded_modules():
+            module = self.get_loaded_modules()[fqn]
+            if fqn.startswith(mod_path) or mod_path == "all":
+                modules.append(module)
+
+        # Build Index
+        for module in modules:
+            module_data = {}
+
+            # Not in Meta
+            module_data["path"]             = module.get_fqn()
+            module_data["last_updated"]     = datetime.strftime(datetime.now(), "%Y-%m-%d")
+
+            # Meta data
+            module_data["author"]           = module.meta.get("author")
+            module_data["name"]             = module.meta.get("name")
+            module_data["description"]      = module.meta.get("description")
+            module_data["version"]          = module.meta.get("version", "1.0")
+
+            # Optional Data
+            module_data["dependencies"]     = module.meta.get("dependencies", [])
+            module_data["files"]            = module.meta.get("files", [])
+            module_data["required_keys"]    = module.meta.get("required_keys", [])
+
+            index.append(module_data)
+
+        return index
+
+
+
 
     def test(self):
         pass

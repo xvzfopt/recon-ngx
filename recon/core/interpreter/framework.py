@@ -2,11 +2,13 @@
 # Imports: External
 # =====================================================================================
 import os
+import yaml
 
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
 from .base import BaseInterpreter
+from recon.utils import utils
 
 # =====================================================================================
 # Framework Interpreter Class
@@ -231,6 +233,31 @@ class FrameworkInterpreter(BaseInterpreter):
             self._console.output("Workspace removed.")
             if params == self._recon.get_current_workspace().get_name():
                 self._recon.set_workspace('default')
+
+    # =====================================================================================
+    # Command Do Functions: "index" (dev only)
+    # =====================================================================================
+    def do_index(self, params):
+        '''Creates a module index (dev only)'''
+
+        # Check Modules specified
+        mod_path, dest_file = self._parse_params(params)
+        if not mod_path:
+            self.help_index()
+            return
+
+        mm = self._recon.get_module_manager()
+        index = mm.create_modules_index(mod_path)
+
+        if index:
+            markup = yaml.safe_dump(index)
+            print(markup)
+            # Write to file if file name specified
+            if dest_file:
+                utils.write_local_file(dest_file, markup)
+                self._console.output("Module index file created.")
+        else:
+            self._console.output('No modules found.')
 
     # =====================================================================================
     # Command Do Function: "snapshots"
@@ -483,6 +510,15 @@ class FrameworkInterpreter(BaseInterpreter):
     _complete_snapshots_remove = _complete_snapshots_load
 
     # =====================================================================================
+    # Auto-completion Functions: index
+    # =====================================================================================
+    def complete_index(self, text, line, *ignored):
+        if len(line.split(' ')) == 2:
+            mm = self._recon.get_module_manager()
+            return [x for x in mm.get_loaded_modules() if x.startswith(text)]
+        return []
+
+    # =====================================================================================
     # Command Help Functions
     # =====================================================================================
     def help_marketplace(self):
@@ -532,6 +568,11 @@ class FrameworkInterpreter(BaseInterpreter):
     def _help_snapshots_remove(self):
         print(getattr(self, '_do_snapshots_remove').__doc__)
         print(f"{os.linesep}Usage: snapshots remove <name>{os.linesep}")
+
+    def help_index(self):
+        print(getattr(self, 'do_index').__doc__)
+        print(f"{os.linesep}Usage: index <module|all> <output file>{os.linesep}")
+
 
 
 
