@@ -37,6 +37,43 @@ class WorkspaceDB(ReconNGXDatabase):
     # =====================================================================================
     # Insert Function
     # =====================================================================================
+    def insert_domains(self, domain=None, notes=None, mute=None):
+        '''
+        Inserts a new domain name into the Workspace Database
+
+        :param domain: The new domain name to add
+        :type domain: str
+        :param notes: Any notes on the domain name being added
+        :type notes: str
+        :param mute: Whether the returns of the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build Data
+        data = dict(
+            domain=domain,
+            notes=notes
+        )
+
+        # Insert into table
+        rowcount = self._insert("domains", data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def _display_insert_results(self, data, rowcount):
+        '''
+        Displays the results of an insert operation
+
+        :param data: The data that was inserted into the table
+        :type data: dict
+        :param rowcount: The number of rows affected
+        :type rowcount: int
+        '''
+        display = self._console.alert if rowcount else self._console.verbose
+        for key in sorted(data.keys()):
+            display(f"{key.title()}: {data[key]}")
+        display("-"*50)
 
     # =====================================================================================
     # Snapshot Functions
@@ -93,6 +130,19 @@ class WorkspaceDB(ReconNGXDatabase):
         os.remove(snapshot_path)
         self._console.output(f"Snapshot removed: {snapshot_name}")
 
+    # =====================================================================================
+    # Getters
+    # =====================================================================================
+    def is_modifiable_table(self, table_name):
+        '''
+        Checks if the specified table supports modification by the user, such as the addition and deletion of rows
+
+        :param table_name: The name of the table to check
+        :type table_name: str
+        :returns: True if the table supports modification, False otherwise
+        :rtype: bool
+        '''
+        return hasattr(self, "insert_%s" % table_name)
 
     # =====================================================================================
     # Internal Functions

@@ -11,5 +11,5 @@ class ReconNGXException(Exception):
 # =====================================================================================
 class ValidationException(ReconNGXException):
     '''
-    Recon-NGX Validation Exception
+    Validation Exception. Raised when validation fails
     '''

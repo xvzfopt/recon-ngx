@@ -70,6 +70,34 @@ class ReconNGXDatabase:
     def query(self, *args, **kwargs):
         return self._query(self._path, *args, **kwargs)
 
+    def insert_row(self, table, data, unique_columns=[]):
+        return self._insert(table, data, unique_columns)
+
+    def delete_row(self, table, row_ids):
+        '''
+        Deletes one or more rows from the specified table
+
+        :param table: The target table
+        :type table: str
+        :param row_ids: A list of Rows to delete
+        :type row_ids: list
+        '''
+        pass
+
+    # =====================================================================================
+    # Getters
+    # =====================================================================================
+    def is_valid_table(self, table_name):
+        '''
+        Checks if the specified table is name is valid
+
+        :param table_name: The name of the table to check
+        :type table_name: str
+        :returns: True if the table is valid, False otherwise
+        :rtype: bool
+        '''
+        return table_name in self.get_tables()
+
     def get_path(self):
         '''
         Gets the path to the Database file
@@ -89,6 +117,41 @@ class ReconNGXDatabase:
         return datetime.fromtimestamp(
             os.path.getmtime(self._path)
         ).strftime('%Y-%m-%d %H:%M:%S')
+
+    def get_tables(self):
+        '''
+        Gets the list of tables in the database
+        '''
+        tables = []
+
+        # Query DB for tables
+        results = self.query('SELECT NAME from sqlite_master WHERE type="table"')
+        for result in results:
+            tables.append(result[0])
+
+        return tables
+
+    def get_table_columns(self, table, exclude_module=False):
+        '''
+        Gets the columns in the specified table
+
+        :param table: The name of the table
+        :type table: str
+        :param exclude_module: Whether or not to exclude the module column
+        :type exclude_module: bool
+        :returns: List of tuples containing two elements: column name, column type
+        :rtype: list[tuple]
+        '''
+        columns = []
+
+        # Query DB for table info
+        results = self.query("PRAGMA table_info('%s')" % table)
+        for result in results:
+            if not result[1] == "module" or not exclude_module:
+                columns.append((result[1], result[2]))
+
+        return columns
+
 
     # =====================================================================================
     # Internal Functions
