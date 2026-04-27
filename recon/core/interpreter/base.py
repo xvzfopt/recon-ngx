@@ -3,6 +3,7 @@
 # =====================================================================================
 import os
 import re
+import sqlite3
 from cmd import Cmd
 
 # =====================================================================================
@@ -136,6 +137,149 @@ class BaseInterpreter(Cmd):
         '''
         self._status = self.STATUS_EXITED
         return True
+
+
+    # =====================================================================================
+    # Command Do Functions: "db"
+    # =====================================================================================
+    def do_db(self, params):
+        '''Interfaces with the workspace's database'''
+
+        # Check subcommand was provided
+        if not params:
+            self.help_db()
+            return
+        arg, params = self._parse_params(params)
+
+        # Execute subcommand
+        if arg in self._get_subcommands('db'):
+            return getattr(self, '_do_db_'+arg)(params)
+        else:
+            self.help_db()
+
+    def _do_db_schema(self, params):
+        '''Displays the database schema'''
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Display schema for every table
+        tables = db.get_tables()
+        for table in tables:
+            columns = db.get_table_columns(table)
+            self._console.table(columns, title=table)
+
+    def _do_db_query(self, params):
+        '''Queries the database with a custom SQL query'''
+
+        # Check a Query was provided
+        if not params:
+            self._help_db_query()
+            return
+
+        # Sanitize query
+        query = params.strip('"\'')
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Execute Query
+        try:
+            results = db.query(query, include_header=True)
+        except sqlite3.OperationalError as e:
+            self._console.error(f"Invalid query. {type(e).__name__} {e}")
+            return
+
+        # Process Results
+        if type(results) == list:
+            header = results.pop(0)
+            if not results:
+                self._console.output('No data returned.')
+            else:
+                self._console.table(results, header=header)
+                self._console.output(f"{len(results)} rows returned")
+        else:
+            self._console.output(f"{results} rows affected.")
+
+    def _do_db_insert(self, params):
+        '''Inserts a record into the database'''
+        record = {}
+
+        # Parse table and row data
+        table, params = self._parse_params(params)
+        if not table:
+            self._help_db_insert()
+            return
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Check table
+        if not db.is_valid_table(table):
+            self._console.output("Invalid table name.")
+            return
+        if not db.is_modifiable_table(table):
+            self._console.error("Cannot add records to dynamically created tables.")
+            return
+
+        # Process columns (sanitise if necessary to avoid conflicts with builtins in insert_* method
+        columns = db.get_table_columns(table, exclude_module=True)
+        column_names = []
+        for x in range(len(columns)):
+            column_name = columns[x][0]
+            column_names.append(column_name)
+            if column_name in ["hash", "type"]:
+                columns[x] = "_%s" % column_name
+
+        # =====================================================================================
+        # Build Record: Non-interactive
+        # =====================================================================================
+        if params:
+            kvps = params.split("~")
+
+            # Check expected number of inputs provided
+            if len(kvps) != len(columns):
+                self._console.error("Columns and values length mismatch.")
+                return
+
+            # Check key names match columns
+            for kvp in kvps:
+                col, value = kvp.split('=')
+                if col not in column_names:
+                    self._console.error("Invalid column name specified: %s" % col)
+                    return
+
+                if col in record:
+                    self._console.error("Column '%s' was specified more than once" % col)
+                    return
+                record[col] = value
+        # =====================================================================================
+        # Build Record: Interactive
+        # =====================================================================================
+        else:
+            for column in columns:
+                # prompt user for data
+                try:
+                    value = input(f"{column[0]} ({column[1]}): ")
+                    record[column[0]] = value
+                except KeyboardInterrupt:
+                    print('')
+                    return
+                # TODO: Review this and adapt as needed
+                # finally:
+                #     # ensure proper output for resource scripts
+                #     if Framework._script:
+                #         print(f"{value}")
+
+        # =====================================================================================
+        # Add Record to DB
+        # =====================================================================================
+        insert_func = getattr(db, "insert_%s" % table)
+        count = insert_func(mute=False, **record)
+        self._console.output("%s row(s) affected" % count)
 
     # =====================================================================================
     # Command Do Functions: "options"
@@ -397,6 +541,19 @@ class BaseInterpreter(Cmd):
     def _help_options_unset(self):
         print(getattr(self, '_do_options_unset').__doc__)
         print(f"{os.linesep}Usage: options unset <option>{os.linesep}")
+
+    def help_db(self):
+        print(getattr(self, 'do_db').__doc__)
+        print(f"{os.linesep}Usage: db <{'|'.join(self._get_subcommands('db'))}> [...]{os.linesep}")
+
+    def _help_db_query(self):
+        print(getattr(self, '_do_db_query').__doc__)
+        print(f"{os.linesep}Usage: db query <sql>{os.linesep}")
+
+    def _help_db_insert(self):
+        print(getattr(self, '_do_db_insert').__doc__)
+        print(f"{os.linesep}Usage: db insert <table> [<values>]{os.linesep}")
+        print(f"values => '~' delimited string representing column values (exclude rowid, module){os.linesep}")
 
 
     # =====================================================================================
