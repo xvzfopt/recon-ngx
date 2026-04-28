@@ -281,6 +281,104 @@ class BaseInterpreter(Cmd):
         count = insert_func(mute=False, **record)
         self._console.output("%s row(s) affected" % count)
 
+    def _do_db_delete(self, params):
+        '''Deletes a row from the Database'''
+        row_ids = []
+
+        # Parse Table and row data
+        table, params = self._parse_params(params)
+        if not table:
+            self._help_db_delete()
+            return
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Check table
+        if not db.is_valid_table(table):
+            self._console.output("Invalid table name.")
+            return
+
+        # =====================================================================================
+        # Process Row IDs Input
+        # =====================================================================================
+        # Non-interactive Deletion
+        if params:
+            row_ids += db.expand_rows_string(params)
+        # Interactive Deletion
+        else:
+            try:
+                params = input("Row ID(s) (INT): ")
+                row_ids += db.expand_rows_string(params)
+            except KeyboardInterrupt:
+                print('')
+                return
+            # TODO: Review this and adapt as needed
+            # finally:
+            #    # ensure proper output for resource scripts
+            #    if Framework._script:
+            #        print(f"{params}")
+
+        # =====================================================================================
+        # Perform Deletion
+        # =====================================================================================
+        count = 0
+        print(row_ids)
+        for id in row_ids:
+            count += db.delete_row(table, id)
+        self._console.output("%s row(s) affected" % count)
+
+    def _do_db_notes(self, params):
+        '''Adds notes to rows in the database'''
+        row_ids = []
+        note = ""
+
+        # Process Table and Rows
+        table, params = self._parse_params(params)
+        if not table:
+            self._help_db_notes()
+            return
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Check table
+        if not db.is_valid_table(table):
+            self._console.output("Invalid table name.")
+            return
+
+        # =====================================================================================
+        # Process Row ID and Note Inputs
+        # =====================================================================================
+        # Non-interactive
+        if params:
+            row_string, note = self._parse_params(params)
+            row_ids = self._parse_params(row_string)
+        # Interactive
+        else:
+            try:
+                params = input("Row ID(s) (INT): ")
+                row_ids = self._parse_params(params)
+                note = input("Note (TXT): ")
+            except KeyboardInterrupt:
+                print('')
+                return
+            # TODO: Review this and adapt as needed
+            # finally:
+            #    # ensure proper output for resource scripts
+            #    if Framework._script:
+            #        print(f"{params}")
+
+        # =====================================================================================
+        # Perform Note Additions/Updates
+        # =====================================================================================
+        count = 0
+        for id in row_ids:
+            count += db.set_row_note(table, id, note)
+        self._console.output("%s row(s) affected" % count)
+
     # =====================================================================================
     # Command Do Functions: "options"
     # =====================================================================================
@@ -555,6 +653,15 @@ class BaseInterpreter(Cmd):
         print(f"{os.linesep}Usage: db insert <table> [<values>]{os.linesep}")
         print(f"values => '~' delimited string representing column values (exclude rowid, module){os.linesep}")
 
+    def _help_db_delete(self):
+        print(getattr(self, '_do_db_delete').__doc__)
+        print(f"{os.linesep}Usage: db delete <table> [<rowid(s)>]{os.linesep}")
+        print(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
+
+    def _help_db_notes(self):
+        print(getattr(self, '_do_db_notes').__doc__)
+        print(f"{os.linesep}Usage: db note <table> [<rowid(s)> <note>]{os.linesep}")
+        print(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
 
     # =====================================================================================
     # Getters

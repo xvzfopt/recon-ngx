@@ -73,16 +73,19 @@ class ReconNGXDatabase:
     def insert_row(self, table, data, unique_columns=[]):
         return self._insert(table, data, unique_columns)
 
-    def delete_row(self, table, row_ids):
+    def delete_row(self, table, row_id):
         '''
-        Deletes one or more rows from the specified table
+        Deletes a row from the specified table
 
         :param table: The target table
         :type table: str
-        :param row_ids: A list of Rows to delete
-        :type row_ids: list
+        :param row_id: The ID of the row to delete
+        :type row_id: str
+        :returns: True if the row was deleted, otherwise False
+        :rtype: bool
         '''
-        pass
+        query = "DELETE FROM '%s' WHERE ROWID IS %s" % (table, row_id)
+        return self.query(query)
 
     # =====================================================================================
     # Getters
@@ -152,6 +155,49 @@ class ReconNGXDatabase:
 
         return columns
 
+    def table_exists(self, table):
+        '''
+        Checks if the specified table exists in the database
+
+        :param table: The name of the table to check
+        :type table: str
+        :return: True if exists, otherwise False
+        :rtype: bool
+        '''
+        query = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='%s';" % table
+        results = self.query(query)
+        if results:
+            return True
+        return False
+
+
+    # =====================================================================================
+    # Utils/Helpers
+    # =====================================================================================
+    def expand_rows_string(self, rstring):
+        '''
+        Expands a Rows string into a list of Row IDs
+
+        :param rstring: The Rows string to expand
+        :type rstring: str
+        :returns: List of row IDs
+        :rtype: list
+        '''
+        row_ids = []
+
+        for entry in [x.strip() for x in rstring.split(',')]:
+            try:
+                if "-" in entry:
+                    start = int(entry.split('-')[0].strip())
+                    end = int(entry.split('-')[1].strip())
+                    row_ids += range(start, end + 1)
+                else:
+                    row_ids.append(int(entry))
+            except ValueError:
+                continue
+
+        return sorted(list(set(row_ids)))
+
 
     # =====================================================================================
     # Internal Functions
@@ -206,22 +252,6 @@ class ReconNGXDatabase:
         self._summary_counts[table]['count'] += 1
 
         return rowcount
-
-    def table_exists(self, table):
-        '''
-        Checks if the specified table exists in the database
-
-        :param table: The name of the table to check
-        :type table: str
-        :return: True if exists, otherwise False
-        :rtype: bool
-        '''
-        query = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='%s';" % table
-        results = self.query(query)
-        if results:
-            return True
-        return False
-
 
     def _query(self, path, query, values=(), include_header=False):
         '''

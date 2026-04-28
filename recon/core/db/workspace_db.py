@@ -5,6 +5,9 @@ import os
 import re
 import shutil
 from datetime import datetime
+from dateutil import parser as date_parser
+from dateutil.parser import ParserError
+from rq.worker_pool import run_worker
 
 # =====================================================================================
 # Imports: Internal
@@ -23,6 +26,7 @@ class WorkspaceDB(ReconNGXDatabase):
     # =====================================================================================
     # Properties
     # =====================================================================================
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     # =====================================================================================
     # Functions
@@ -39,7 +43,7 @@ class WorkspaceDB(ReconNGXDatabase):
     # =====================================================================================
     def insert_domains(self, domain=None, notes=None, mute=None):
         '''
-        Inserts a new domain name into the Workspace Database
+        Adds a domain name to the Workspace Database
 
         :param domain: The new domain name to add
         :type domain: str
@@ -55,25 +59,129 @@ class WorkspaceDB(ReconNGXDatabase):
             notes=notes
         )
 
-        # Insert into table
+        # Add data to table
         rowcount = self._insert("domains", data.copy(), data.keys())
         if not mute:
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def _display_insert_results(self, data, rowcount):
+    def insert_companies(self, company=None, description=None, notes=None, mute=False):
         '''
-        Displays the results of an insert operation
+        Adds a company to the Workspace Database
 
-        :param data: The data that was inserted into the table
-        :type data: dict
-        :param rowcount: The number of rows affected
-        :type rowcount: int
+        :param company: The new company name to add
+        :type company: str
+        :param description: A description of the company
+        :type description: str
+        :param notes: Any notes on the company being added
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
         '''
-        display = self._console.alert if rowcount else self._console.verbose
-        for key in sorted(data.keys()):
-            display(f"{key.title()}: {data[key]}")
-        display("-"*50)
+
+        # Build Data
+        data = dict(
+            company = company,
+            description = description,
+            notes = notes
+        )
+
+        # Add company to table
+        rowcount = self._insert('companies', data.copy(), ('company',))
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_netblocks(self, netblock=None, notes=None, mute=False):
+        '''
+        Adds a netblock to the Workspace Database
+
+        :param netblock: The netblock to add
+        :type netblock: str
+        :param notes: Any notes on the netblock being added
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build Data
+        data = dict(
+            netblock = netblock,
+            notes = notes
+        )
+
+        # Add netblock to table
+        rowcount = self._insert('netblocks', data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_locations(self, latitude=None, longitude=None, street_address=None, notes=None, mute=False):
+        '''
+        Adds a location to the Workspace Database
+        '''
+
+        # Build location data
+        data = dict(
+            latitude = latitude,
+            longitude = longitude,
+            street_address = street_address,
+            notes = notes
+        )
+
+        # Add data to table
+        rowcount = self._insert('locations', data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None, status=None, notes=None, mute=False):
+        '''
+        Adds a vulnerability to the database and returns the affected row count.
+        '''
+
+        # Process Publish Date
+        if publish_date:
+            try:
+                publish_date = date_parser.parse(publish_date)
+            except ParserError:
+                self._console.error("Publish Date is not a valid date/time")
+                return 0
+
+        # Build vuln data
+        data = dict(
+            host = host,
+            reference = reference,
+            example = example,
+            publish_date = publish_date.strftime(self.DATE_FORMAT) if publish_date else None,
+            category = category,
+            status = status,
+            notes = notes
+        )
+
+        # Add data to table
+        rowcount = self._insert('vulnerabilities', data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+
+    # =====================================================================================
+    # General Functions
+    # =====================================================================================
+    def set_row_note(self, table, row_id, note):
+        '''
+        Sets the note for a row in the specified table
+
+        :param table: The target table
+        :type table: str
+        :param row_id: The ID of the row to add the note to
+        :type row_id: int
+        :param note: The note to add
+        :type note: str
+        '''
+        query = "UPDATE %s SET notes=? WHERE ROWID = ?" % (table)
+        return self.query(query, (note, row_id))
 
     # =====================================================================================
     # Snapshot Functions
@@ -245,6 +353,20 @@ class WorkspaceDB(ReconNGXDatabase):
         self.query('CREATE TABLE IF NOT EXISTS repositories (name TEXT, owner TEXT, description TEXT, resource TEXT, category TEXT, url TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS dashboard (module TEXT PRIMARY KEY, runs INT)')
         self.query('PRAGMA user_version = 10')
+
+    def _display_insert_results(self, data, rowcount):
+        '''
+        Displays the results of an insert operation
+
+        :param data: The data that was inserted into the table
+        :type data: dict
+        :param rowcount: The number of rows affected
+        :type rowcount: int
+        '''
+        display = self._console.alert if rowcount else self._console.verbose
+        for key in sorted(data.keys()):
+            display(f"{key.title()}: {data[key]}")
+        display("-"*50)
 
     def _generate_snapshot_timestamp(self):
         '''
