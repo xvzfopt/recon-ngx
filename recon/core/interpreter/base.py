@@ -50,6 +50,8 @@ class BaseInterpreter(Cmd):
 
         self._base_prompt = "[%s]" % self._recon.get_app_name()
 
+        # Set header for "help" command
+        self.doc_header = 'Commands (type [help|?] <topic>):'
 
     def start(self):
         '''
@@ -86,7 +88,6 @@ class BaseInterpreter(Cmd):
         '''
         return line
 
-
     def onecmd(self, line):
         '''
         !!! CMD PROCESSOR !!!
@@ -108,36 +109,40 @@ class BaseInterpreter(Cmd):
         except AttributeError:
             return self.default(line)
 
-        '''
-        We have an interpreter/executor package containing several executors, or exeuctor contexts
-            1. BaseExecutor (all inherit from). Contains executions common across executors
-            2. FrameworkExecutor. The default context used outside of a module
-            3. ModuleExecutor. The executor context used when a module is the focus
-        '''
-
         # Delegate Action to target function
         try:
             return func(arg)
         except Exception:
             self._console.print_exception()
 
+    def print_topics(self, header, cmds, cmdlen, maxcol):
+        '''
+        Override handling of "help" command, making the menu more attractive
+        '''
+        if cmds:
+            self.stdout.write(f"{header}{os.linesep}")
+            if self.RULER:
+                self.stdout.write(f"{self.RULER * len(header)}{os.linesep}")
+            for cmd in cmds:
+                self.stdout.write(f"{cmd.ljust(15)} {getattr(self, 'do_' + cmd).__doc__}{os.linesep}")
+            self.stdout.write(os.linesep)
+
     # =====================================================================================
     # Command Functions: Back/Exit
     # =====================================================================================
     def do_exit(self, params):
-        '''
-        Action Handler: exit
-        '''
+        '''Exists the Framework'''
         self._status = self.STATUS_EXITED
         return True
 
     def do_back(self, params):
-        '''
-        Action Handler: Back
-        '''
+        '''Exits the current context'''
         self._status = self.STATUS_EXITED
         return True
 
+    def do_help(self, params):
+        '''Displays this menu'''
+        super(BaseInterpreter, self).do_help(params)
 
     # =====================================================================================
     # Command Do Functions: "db"
@@ -788,7 +793,7 @@ class BaseInterpreter(Cmd):
             if val_len < 13: val_len = 13
             print('')
             print(pattern % ('Name'.ljust(key_len), 'Current Value'.ljust(val_len), 'Required', 'Description'))
-            print(pattern % (self.ruler*key_len, (self.ruler*13).ljust(val_len), self.ruler*8, self.ruler*11))
+            print(pattern % (self.RULER*key_len, (self.RULER*13).ljust(val_len), self.RULER*8, self.RULER*11))
             for key in sorted(options):
                 value = options[key] if options[key] != None else ''
                 reqd = 'no' if options.required[key] is False else 'yes'
