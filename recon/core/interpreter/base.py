@@ -225,24 +225,25 @@ class BaseInterpreter(Cmd):
             self._console.error("Cannot add records to dynamically created tables.")
             return
 
-        # Process columns (sanitise if necessary to avoid conflicts with builtins in insert_* method
+        # Column sanitiser lambda. Prevents conflicts with builtins in insert_* method, like Python's type() and hash()
+        # This is needed wherever a function parameter may conflict with a Python builtin keyword, function etc.
+        sanitize_column = lambda x: '_' + x if x in ['hash', 'type'] else x
+
+        # Process columns
         columns = db.get_table_columns(table, exclude_module=True)
         column_names = []
         for x in range(len(columns)):
-            column_name = columns[x][0]
-            column_names.append(column_name)
-            if column_name in ["hash", "type"]:
-                columns[x] = "_%s" % column_name
+            column_names.append(columns[x][0])
 
         # =====================================================================================
         # Build Record: Non-interactive
         # =====================================================================================
         if params:
-            kvps = params.split("~")
+            kvps = [x for x in params.split("~") if x] # Filter any empty items
 
             # Check expected number of inputs provided
             if len(kvps) != len(columns):
-                self._console.error("Columns and values length mismatch.")
+                self._console.error("Columns and values length mismatch. %s => %s" % (len(columns), len(kvps)))
                 return
 
             # Check key names match columns
@@ -255,7 +256,7 @@ class BaseInterpreter(Cmd):
                 if col in record:
                     self._console.error("Column '%s' was specified more than once" % col)
                     return
-                record[col] = value
+                record[sanitize_column(col)] = value
         # =====================================================================================
         # Build Record: Interactive
         # =====================================================================================
@@ -264,7 +265,7 @@ class BaseInterpreter(Cmd):
                 # prompt user for data
                 try:
                     value = input(f"{column[0]} ({column[1]}): ")
-                    record[column[0]] = value
+                    record[sanitize_column(column[0])] = value
                 except KeyboardInterrupt:
                     print('')
                     return
