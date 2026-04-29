@@ -12,7 +12,6 @@ from cmd import Cmd
 from recon.utils import utils
 from recon.core.exceptions import *
 
-
 # =====================================================================================
 # Base Command Interpreter Class
 # =====================================================================================
@@ -386,6 +385,25 @@ class BaseInterpreter(Cmd):
         self._console.output("%s row(s) affected" % count)
 
     # =====================================================================================
+    # Command Do Functions: "show"
+    # =====================================================================================
+    def do_show(self, params):
+        '''Shows various framework items'''
+
+        # Check show type specified
+        if not params:
+            self.help_show()
+            return
+
+        # Process table specifier
+        arg, params = self._parse_params(params)
+        if arg in self._get_db_table_names():
+            self.do_db(f"query SELECT ROWID, * FROM `{arg}`")
+        else:
+            self.help_show()
+
+
+    # =====================================================================================
     # Command Do Functions: "options"
     # =====================================================================================
     def do_options(self, params):
@@ -673,6 +691,24 @@ class BaseInterpreter(Cmd):
     _complete_db_schema = _complete_db_query
 
     # =====================================================================================
+    # Auto-completion Functions: show
+    # =====================================================================================
+    def complete_show(self, text, line, *ignored):
+        '''
+        Auto-completion for show command
+        Searches for available tables and auto-completes
+
+        :param text: The table name to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        options = sorted(self._get_db_table_names())
+        return [x for x in options if x.startswith(text)]
+
+    # =====================================================================================
     # Command Help Functions
     # =====================================================================================
     def help_modules(self):
@@ -721,6 +757,12 @@ class BaseInterpreter(Cmd):
         print(getattr(self, '_do_db_notes').__doc__)
         print(f"{os.linesep}Usage: db note <table> [<rowid(s)> <note>]{os.linesep}")
         print(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
+
+    def help_show(self):
+        options = sorted(self._get_db_table_names())
+        print(getattr(self, 'do_show').__doc__)
+        print(f"{os.linesep}Usage: show <{'|'.join(options)}>{os.linesep}")
+
 
     # =====================================================================================
     # Getters
@@ -822,7 +864,6 @@ class BaseInterpreter(Cmd):
         params = ' '.join(params)
         return arg, params
 
-
     def _get_subcommands(self, command):
         '''
         Gets available subcommands for a specific command
@@ -837,3 +878,11 @@ class BaseInterpreter(Cmd):
             if "_do_%s_" % command in method:
                 subcommands.append(method.split("_")[-1])
         return subcommands
+
+    def _get_db_table_names(self):
+        '''
+        Gets a list of available table names in the current database
+        '''
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+        return db.get_tables()
