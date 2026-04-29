@@ -206,7 +206,7 @@ class ConsoleOutput:
 
         # Check row lengths are consistent
         if len(set([len(x) for x in tdata])) > 1:
-            raise FrameworkException('Row lengths not consistent.')
+            raise ReconNGXException('Row lengths not consistent.')
 
         cols_count = len(tdata[0])
 
