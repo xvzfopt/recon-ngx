@@ -119,6 +119,17 @@ class WorkspaceDB(ReconNGXDatabase):
     def insert_locations(self, latitude=None, longitude=None, street_address=None, notes=None, mute=False):
         '''
         Adds a location to the Workspace Database
+
+        :param latitude: The Latitude of the location
+        :type latitude: str
+        :param latitude: The Latitude of the location
+        :type latitude: str
+        :param street_address: The street address of the location
+        :type street_address: str
+        :param notes: Any notes on the location being added
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
         '''
 
         # Build location data
@@ -138,6 +149,23 @@ class WorkspaceDB(ReconNGXDatabase):
     def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None, status=None, notes=None, mute=False):
         '''
         Adds a vulnerability to the database and returns the affected row count.
+
+        :param host: The Hostname or IP Address of the vulnerable host
+        :type host: str
+        :param reference: The vulnerability reference
+        :type reference: str
+        :param example: The vulnerability example
+        :type example: str
+        :param publish_date: The publish date of the vulnerability
+        :type publish_date: str
+        :param category: A category for the vulnerability
+        :type category: str
+        :param status: A vulnerability status
+        :type status: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
         '''
 
         # Process Publish Date
@@ -161,6 +189,180 @@ class WorkspaceDB(ReconNGXDatabase):
 
         # Add data to table
         rowcount = self._insert('vulnerabilities', data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_ports(self, ip_address=None, host=None, port=None, protocol=None, banner=None, notes=None, mute=False):
+        '''
+        Adds a port to the Workspace Database
+
+        :param ip_address: The IP Address of the host for this port
+        :type ip_address: str
+        :param host: The Hostname of the host for this port
+        :type host: str
+        :param port: The Port Number
+        :type port: str
+        :param protocol: The Protocol associated with the port number, e.g. SSH
+        :type protocol: str
+        :param banner: The banner of the service listening on the port
+        :type banner: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build Port data
+        data = dict(
+            ip_address = ip_address,
+            port = port,
+            host = host,
+            protocol = protocol,
+            banner = banner,
+            notes = notes
+        )
+
+        # Add data to table
+        rowcount = self._insert('ports', data.copy(), ('ip_address', 'port', 'host'))
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_hosts(self, host=None, ip_address=None, region=None, country=None, latitude=None, longitude=None, notes=None, mute=False):
+        '''
+        Adds a host to the Workspace Database
+
+        :param host: The hostname of the host
+        :type host: str
+        :param ip_address: The IP Address of the host
+        :type ip_address: str
+        :param region: The region in which the host is located
+        :type region: str
+        :param country: The country in which the host is located
+        :type country: str
+        :param latitude: The latitude where the host is located
+        :type latitude: str
+        :param longitude: The longitude where the host is located
+        :type longitude: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build Host data
+        data = dict(
+            host = host,
+            ip_address = ip_address,
+            region = region,
+            country = country,
+            latitude = latitude,
+            longitude = longitude,
+            notes = notes
+        )
+
+        # Add data to table
+        rowcount = self._insert('hosts', data.copy(), ('host', 'ip_address'))
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None, country=None, phone=None, notes=None, mute=False):
+        '''
+        Adds a contact to the Workspace Database
+
+        :param first_name: The first name of the contact
+        :type first_name: str
+        :param middle_name: The middle name of the contact
+        :type middle_name: str
+        :param last_name: The last name of the contact
+        :type last_name: str
+        :param email: The email address of the contact
+        :type email: str
+        :param title: The contact's title
+        :type title: str
+        :param region: The region in which the contact is located
+        :type region: str
+        :param country: The country in which the contact is located
+        :type country: str
+        :param phone: The phone number of the contact
+        :type phone: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build Contact data
+        data = dict(
+            first_name = first_name,
+            middle_name = middle_name,
+            last_name = last_name,
+            title = title,
+            email = email,
+            region = region,
+            country = country,
+            phone = phone,
+            notes = notes
+        )
+
+        # Add data to table
+        rowcount = self._insert('contacts', data.copy(), ('first_name', 'middle_name', 'last_name', 'title', 'email', 'phone'))
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_credentials(self, username=None, password=None, _hash=None, _type=None, leak=None, notes=None, mute=False):
+        '''
+        Adds a set of credentials to the Workspace Database
+
+        :param username: The username
+        :type username: str
+        :param password: The password
+        :type password: str
+        :param _hash: The hash of the password
+        :type _hash: str
+        :param _type: The hash type of the password
+        :type _type: str
+        :param leak: A leak associated with this credential set
+        :type leak: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # =====================================================================================
+        # Process Hash
+        # =====================================================================================
+        hash_type = _type
+        if password and not _hash:
+            hash_type = utils.get_hash_type(password)
+            if hash_type:
+                _hash = password
+                password = None
+        # handle hashes provided without a type
+        if _hash and not _type:
+            hash_type = utils.get_hash_type(_hash)
+
+        # =====================================================================================
+        # Process Email Addresses
+        # =====================================================================================
+        if username is not None and '@' in username:
+            self.insert_contacts(first_name=None, last_name=None, title=None, email=username)
+
+        # Build Credential data
+        data = dict (
+            username = username,
+            password = password,
+            hash = _hash,
+            type = hash_type,
+            leak = leak,
+            notes = notes
+        )
+        print("Data: %s" % data)
+        rowcount = self._insert('credentials', data.copy(), data.keys())
         if not mute:
             self._display_insert_results(data, rowcount)
         return rowcount
