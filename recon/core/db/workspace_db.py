@@ -361,12 +361,198 @@ class WorkspaceDB(ReconNGXDatabase):
             leak = leak,
             notes = notes
         )
-        print("Data: %s" % data)
+
         rowcount = self._insert('credentials', data.copy(), data.keys())
         if not mute:
             self._display_insert_results(data, rowcount)
         return rowcount
 
+
+    def insert_leaks(self, leak_id=None, description=None, source_refs=None, leak_type=None, title=None, import_date=None, leak_date=None, attackers=None, num_entries=None, score=None, num_domains_affected=None, attack_method=None, target_industries=None, password_hash=None, password_type=None, targets=None, media_refs=None, notes=None, mute=False):
+        '''
+        Adds a leak to the Workspace Database
+
+        :param leak_id: The ID associated with the leak
+        :type leak_id: int
+        :param description: A description of the leak
+        :type description: str
+        :param source_refs: References for the leak
+        :type source_refs: str
+        :param leak_type: The leak type
+        :type leak_type: str
+        :param title: The leak's title
+        :type title: str
+        :param import_date: The source data of the leak (TBC)
+        :type import_date: str
+        :param leak_date: The date of the leak
+        :type leak_date: str
+        :param attackers: The attackers responsible for/associated with the leak
+        :type attackers: str
+        :param num_entries: The number of entries associated within the leak
+        :type num_entries: str
+        :param score: A score associated with the leak
+        :type score: str
+        :param num_domains_affected: The number of domains affected by the leak
+        :type num_domains_affected: str
+        :param attack_method: An attack method associated with the leak
+        :type attack_method: str
+        :param target_industries: The industries targeted in the leak
+        :type target_industries: str
+        :param password_hash: The password hash of the leak (TBC)
+        :type password_hash: str
+        :param password_type: The password's hash type (TBV)
+        :type password_type: str
+        :param targets: The targets associated with the leak
+        :type targets: str
+        :param media_refs: Any media references associated with the leak
+        :type media_refs: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build Leak data
+        data = dict(
+            leak_id = leak_id,
+            description = description,
+            source_refs = source_refs,
+            leak_type = leak_type,
+            title = title,
+            import_date = import_date,
+            leak_date = leak_date,
+            attackers = attackers,
+            num_entries = num_entries,
+            score = score,
+            num_domains_affected = num_domains_affected,
+            attack_method = attack_method,
+            target_industries = target_industries,
+            password_hash = password_hash,
+            password_type = password_type,
+            targets = targets,
+            media_refs = media_refs,
+            notes = notes
+        )
+
+        # Add leak data to table
+        rowcount = self._insert('leaks', data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_pushpins(self, source=None, screen_name=None, profile_name=None, profile_url=None, media_url=None, thumb_url=None, message=None, latitude=None, longitude=None, time=None, notes=None, mute=False):
+        '''
+        Adds a pushpin to the Workspace Database
+
+        :param source: The source associated with the pushpin
+        :type source: str
+        :param screen_name: The screen_name of the account associated with the pushpin (TBC)
+        :type screen_name: str
+        :param profile_name: The profile_name of the account associated with the pushpin (TBC)
+        :type profile_name: str
+        :param profile_url: The URL of the account associated with the pushpin (TBC)
+        :type profile_url: str
+        :param media_url: The Media URL of the pushpin (TBC)
+        :type media_url: str
+        :param thumb_url: The URL of the thumbnail associated with the pushpin (TBC)
+        :type thumb_url: str
+        :param message: The pushpin message/text content
+        :type message: str
+        :param latitude: The latitude of the pushpin
+        :type latitude: str
+        :param longitude: The longitude of the pushpin
+        :type longitude: str
+        :param time: The pushpin time/date
+        :type time: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Process time/date
+        if time:
+            try:
+                time = date_parser.parse(time)
+            except ParserError:
+                self._console.error("Time is not a valid date/time")
+                return 0
+
+
+        # Create pushpin data
+        data = dict(
+            source = source,
+            screen_name = screen_name,
+            profile_name = profile_name,
+            profile_url = profile_url,
+            media_url = media_url,
+            thumb_url = thumb_url,
+            message = message,
+            latitude = latitude,
+            longitude = longitude,
+            time = time.strftime(self.DATE_FORMAT) if time else None,
+            notes = notes
+        )
+
+        # Add pushpin data to table
+        rowcount = self._insert('pushpins', data.copy(), data.keys())
+        if not mute: self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_profiles(self, username=None, resource=None, url=None, category=None, notes=None, mute=False):
+        '''
+        Adds a profile to the Workspace Database
+
+        :param username: The username of the profile's account
+        :type username: str
+        :param resource: The profile resource (TBC)
+        :type resource: str
+        :param url: The profile url
+        :type url: str
+        :param category: A category for the profile
+        :type category: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
+        '''
+
+        # Build profile data
+        data = dict(
+            username = username,
+            resource = resource,
+            url = url,
+            category = category,
+            notes = notes
+        )
+
+        # Add profile data to table
+        rowcount = self._insert('profiles', data.copy(), ('username', 'url'))
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
+
+    def insert_repositories(self, name=None, owner=None, description=None, resource=None, category=None, url=None, notes=None, mute=False):
+        '''
+        Adds a repository to the Workspace Database
+        '''
+
+        # Build Repository data
+        data = dict(
+            name = name,
+            owner = owner,
+            description = description,
+            resource = resource,
+            category = category,
+            url = url,
+            notes = notes
+        )
+
+        # Add repository data to database
+        rowcount = self._insert('repositories', data.copy(), data.keys())
+        if not mute:
+            self._display_insert_results(data, rowcount)
+        return rowcount
 
     # =====================================================================================
     # General Functions

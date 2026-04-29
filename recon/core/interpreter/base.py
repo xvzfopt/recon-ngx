@@ -613,6 +613,59 @@ class BaseInterpreter(Cmd):
     # Auto-complete options "unset" in same way as set
     _complete_options_unset = _complete_options_set
 
+    # =====================================================================================
+    # Auto-completion Functions: db
+    # =====================================================================================
+    def complete_db(self, text, line, *ignored):
+        '''
+        Auto-completion for db commands
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('db')
+
+        # If directly matching sub-command found, auto-complete that
+        if arg in subs:
+            return getattr(self, '_complete_db_'+arg)(text, params)
+
+        # Else return all available matching commands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_db_insert(self, text, *ignored):
+        '''
+        Auto-completion for db command: insert
+        Searches all DB tables for a table that matches the current input
+
+        :param text: The db table to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+        return [x for x in sorted(db.get_tables()) if x.startswith(text)]
+    # Auto-complete db "notes" and "delete" in same way as insert
+    _complete_db_notes = _complete_db_delete = _complete_db_insert
+
+    def _complete_db_query(self, text, *ignored):
+        '''
+        Auto-completion for db command: query
+        Placeholder: currently we have nothing more to provide for this command
+
+        :param text: The db query command to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        return []
+    # Auto-complete db "schema" in same way as query
+    _complete_db_schema = _complete_db_query
 
     # =====================================================================================
     # Command Help Functions
