@@ -93,15 +93,17 @@ def add_to_path(path):
         sys.path.remove(path)
 
 
-def is_hash(hashstr):
+def get_hash_type(hashstr):
     '''
-    Checks if the specified string is a valid hash
+    Gets the hash type of the specified string
 
     :param hashstr: The string to check
     :type hashstr: str
-    :returns: True if the string is a valid hash, False otherwise
+    :returns: The type of
     :rtype: bool
     '''
+    hash_type = None
+
     hashdict = [
         {'pattern': r'^[a-fA-F0-9]{32}$', 'type': 'MD5'},
         {'pattern': r'^[a-fA-F0-9]{16}$', 'type': 'MySQL'},
@@ -118,8 +120,8 @@ def is_hash(hashstr):
     # Check String
     for hashitem in hashdict:
         if re.match(hashitem['pattern'], hashstr):
-            return hashitem['type']
-    return False
+            hash_type = hashitem['type']
+    return hash_type
 
 def is_writeable(path):
     '''
