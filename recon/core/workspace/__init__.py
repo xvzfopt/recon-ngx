@@ -1,1 +1,1 @@
-from .manager import WorkspaceManager
+from .workspace_manager import WorkspaceManager

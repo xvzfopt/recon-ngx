@@ -1,1 +1,1 @@
-from .manager import ModuleManager
+from .module_manager import ModuleManager
