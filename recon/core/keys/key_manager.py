@@ -45,7 +45,7 @@ class KeyManager:
         :param value: The API Key
         :type value: str
         '''
-        if name in self.get_keys():
+        if name in self.get_key_names():
             self._console.debug("Key with name '%s' already exists. Updating value" % name)
             return self._query('UPDATE keys SET value=? WHERE name=?', (value, name))
         return self._query('INSERT INTO keys VALUES (?, ?)', (name, value))
@@ -104,6 +104,17 @@ class KeyManager:
         :rtype: list
         '''
         return [key[0] for key in self._query('SELECT name FROM keys')]
+
+    def has_key(self, name):
+        '''
+        Checks if the specified key exists
+
+        :param name: The name of the key to check for
+        :type name: str
+        :return: True if the key exists, otherwise False
+        :rtype: bool
+        '''
+        return name in self.get_key_names()
 
     # =====================================================================================
     # Internal Helpers

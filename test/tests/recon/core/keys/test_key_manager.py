@@ -78,6 +78,19 @@ class TestKeyManager(AbsTestCase):
         key2_value = self._km.get_key_value("my_test_key2")
         self.assertEqual("password123", key2_value)
 
+    def test_has_key(self):
+        '''
+        Tests that we can check if a key exists
+        '''
+
+        # Initial check
+        self.assertFalse(self._km.has_key("my_test_key1"))
+
+        # Add Key and re-check
+        key1 = ("my_test_key1", "password123")
+        self._km.add_key(key1[0], key1[1])
+        self.assertTrue(self._km.has_key("my_test_key1"))
+
     def test_remove_keys(self):
         '''
         Tests that we can remove specific API keys
