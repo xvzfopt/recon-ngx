@@ -7,7 +7,6 @@ import shutil
 from datetime import datetime
 from dateutil import parser as date_parser
 from dateutil.parser import ParserError
-from rq.worker_pool import run_worker
 
 # =====================================================================================
 # Imports: Internal
@@ -146,7 +145,8 @@ class WorkspaceDB(ReconNGXDatabase):
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None, status=None, notes=None, mute=False):
+    def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None,
+                               status=None, notes=None, mute=False):
         '''
         Adds a vulnerability to the database and returns the affected row count.
 
@@ -229,7 +229,8 @@ class WorkspaceDB(ReconNGXDatabase):
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def insert_hosts(self, host=None, ip_address=None, region=None, country=None, latitude=None, longitude=None, notes=None, mute=False):
+    def insert_hosts(self, host=None, ip_address=None, region=None, country=None, latitude=None, longitude=None,
+                     notes=None, mute=False):
         '''
         Adds a host to the Workspace Database
 
@@ -268,7 +269,8 @@ class WorkspaceDB(ReconNGXDatabase):
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None, country=None, phone=None, notes=None, mute=False):
+    def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None,
+                        country=None, phone=None, notes=None, mute=False):
         '''
         Adds a contact to the Workspace Database
 
@@ -313,7 +315,8 @@ class WorkspaceDB(ReconNGXDatabase):
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def insert_credentials(self, username=None, password=None, _hash=None, _type=None, leak=None, notes=None, mute=False):
+    def insert_credentials(self, username=None, password=None, _hash=None, _type=None, leak=None, notes=None,
+                           mute=False):
         '''
         Adds a set of credentials to the Workspace Database
 
@@ -368,7 +371,10 @@ class WorkspaceDB(ReconNGXDatabase):
         return rowcount
 
 
-    def insert_leaks(self, leak_id=None, description=None, source_refs=None, leak_type=None, title=None, import_date=None, leak_date=None, attackers=None, num_entries=None, score=None, num_domains_affected=None, attack_method=None, target_industries=None, password_hash=None, password_type=None, targets=None, media_refs=None, notes=None, mute=False):
+    def insert_leaks(self, leak_id=None, description=None, source_refs=None, leak_type=None, title=None,
+                     import_date=None, leak_date=None, attackers=None, num_entries=None, score=None,
+                     num_domains_affected=None, attack_method=None, target_industries=None, password_hash=None,
+                     password_type=None, targets=None, media_refs=None, notes=None, mute=False):
         '''
         Adds a leak to the Workspace Database
 
@@ -440,7 +446,8 @@ class WorkspaceDB(ReconNGXDatabase):
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def insert_pushpins(self, source=None, screen_name=None, profile_name=None, profile_url=None, media_url=None, thumb_url=None, message=None, latitude=None, longitude=None, time=None, notes=None, mute=False):
+    def insert_pushpins(self, source=None, screen_name=None, profile_name=None, profile_url=None, media_url=None,
+                        thumb_url=None, message=None, latitude=None, longitude=None, time=None, notes=None, mute=False):
         '''
         Adds a pushpin to the Workspace Database
 
@@ -532,9 +539,27 @@ class WorkspaceDB(ReconNGXDatabase):
             self._display_insert_results(data, rowcount)
         return rowcount
 
-    def insert_repositories(self, name=None, owner=None, description=None, resource=None, category=None, url=None, notes=None, mute=False):
+    def insert_repositories(self, name=None, owner=None, description=None, resource=None, category=None, url=None,
+                            notes=None, mute=False):
         '''
         Adds a repository to the Workspace Database
+
+        :param name: The name of the repository
+        :type name: str
+        :param owner: The owner of the repository
+        :type owner: str
+        :param description: A description of the repository
+        :type description: str
+        :param resource: The repository resource (TBC)
+        :type resource: str
+        :param category: The repository's category
+        :type category: str
+        :param url: The repository url
+        :type url: str
+        :param notes: Any additional notes
+        :type notes: str
+        :param mute: Whether the table should be displayed after row insertion
+        :type mute: bool
         '''
 
         # Build Repository data
