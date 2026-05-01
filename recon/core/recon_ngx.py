@@ -18,6 +18,7 @@ from recon.core._module import ModuleManager
 from recon.core.workspace import WorkspaceManager
 from recon.core.interpreter import ModuleInterpreter
 from recon.core.interpreter import FrameworkInterpreter
+from recon.core.keys import KeyManager
 from recon.core.exceptions import *
 
 # =====================================================================================
@@ -80,6 +81,9 @@ class ReconNGXApp:
 
         # Initialise Workspace Manager
         self._workspace_manager = WorkspaceManager(self._workspaces_path, self._console, "default")
+
+        # Initialise Key Manager
+        self._key_manager = KeyManager(self._home_path, self._console)
 
         # Run Version Check
         self._check_version()
@@ -202,6 +206,15 @@ class ReconNGXApp:
         :rtype: WorkspaceManager
         '''
         return self._workspace_manager
+
+    def get_key_manager(self):
+        '''
+        Gets the API Key Manager instance
+
+        :returns: The API Key Manager instance
+        :rtype: KeyManager
+        '''
+        return self._key_manager
 
     def get_current_workspace(self):
         '''
