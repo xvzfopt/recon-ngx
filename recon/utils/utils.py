@@ -146,3 +146,51 @@ def get_user_home_path():
     :rtype: str
     '''
     return os.path.expanduser("~")
+
+def print_http_request(request, console):
+    '''
+    Debug Function: Displays debug information about the specified HTTP request
+
+    :param request: The request object
+    :type request: PreparedRequest
+    :param console: The current console output instance
+    :type console: ConsoleOutput
+    '''
+    console.debug(f"{'=' * 25} REQUEST {'=' * 25}")
+
+    # Display configured URL
+    print(f"url:    {request.url}")
+
+    # Display HTTP Method
+    print(f"method: {request.method} {request.path_url}")
+
+    # Display Headers
+    for k, v in request.headers.items():
+        print(f"header: {k}: {v}")
+
+    # Display Body
+    if request.body:
+        print(f"body: {request.body}")
+
+def print_http_response(response, console):
+    '''
+    Debug Function: Displays debug information about the specified HTTP response
+
+    :param response: The response object
+    :type response: Response
+    :param console: The current console output instance
+    :type console: ConsoleOutput
+    '''
+    console.debug(f"{'=' * 25} RESPONSE {'=' * 25}")
+
+    # Display Status
+    print(f"status: {response.status_code} {response.reason}")
+
+    # Display Response Headers
+    for k, v in response.headers.items():
+        print(f"header: {k}: {v}")
+
+    # Display Content
+    if response.content:
+        print(f"body:   {response.content}")
+
