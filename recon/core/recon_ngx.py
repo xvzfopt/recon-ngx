@@ -83,7 +83,6 @@ class ReconNGXApp:
         # Run Version Check
         self._check_version()
 
-
     def start(self, workspace_name="default"):
         '''
         Starts Recon-NGX
@@ -122,7 +121,6 @@ class ReconNGXApp:
                 if is_loaded:
                     continue
             break
-
 
     def validate_options(self):
         '''
@@ -286,6 +284,15 @@ class ReconNGXApp:
         '''
         # TODO TODO TODO
         return True
+
+    def get_verbosity(self):
+        '''
+        Gets the current verbosity level
+
+        :returns: The current verbosity level
+        :rtype: int
+        '''
+        return self.get_option_value("verbosity")
 
     # =====================================================================================
     # Setters
