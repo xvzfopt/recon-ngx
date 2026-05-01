@@ -535,6 +535,79 @@ class BaseInterpreter(Cmd):
         mm.load_modules()
 
     # =====================================================================================
+    # Command Do Functions: "keys"
+    # =====================================================================================
+    def do_keys(self, params):
+        '''Manages third party resource credentials'''
+
+        # Check keys subcommand provided
+        if not params:
+            self.help_keys()
+            return
+
+        # Execute keys subcommand
+        arg, params = self._parse_params(params)
+        if arg in self._get_subcommands('keys'):
+            return getattr(self, '_do_keys_'+arg)(params)
+        else:
+            self.help_keys()
+
+    def _do_keys_add(self, params):
+        '''Adds/Updates a third party resource credential'''
+
+        # Parse Key and value
+        key, value = self._parse_params(params)
+        if not (key and value):
+            self._help_keys_add()
+            return
+
+        # Get Key Manager
+        km = self._recon.get_key_manager()
+
+        # Check if key already exists
+        exists = km.has_key(key)
+
+        # Add/Update key
+        if km.add_key(key, value):
+            if exists:
+                self._console.output(f"Key '{key}' updated.")
+            else:
+                self._console.output(f"Key '{key}' added.")
+
+    def _do_keys_remove(self, params):
+        '''Removes a third party resource credential'''
+
+        # Parse Key name
+        key, value = self._parse_params(params)
+        if not key:
+            self._help_keys_remove()
+            return
+
+        # Get Key Manager
+        km = self._recon.get_key_manager()
+
+        if km.has_key(key):
+            km.remove_key(key)
+            self._console.output(f"Key '{key}' removed.")
+        else:
+            self._console.error('Invalid key name.')
+
+    def _do_keys_list(self, params):
+        '''Lists third party resource credentials'''
+
+        # Fetch Keys
+        keys = self._recon.get_key_manager().get_keys()
+
+        # Build Table Data
+        table_data = []
+        for key in sorted(keys):
+            table_data.append(key)
+
+        # Display Keys
+        self._console.table(table_data, header=["Name", "Value"])
+
+
+    # =====================================================================================
     # Auto-completion Functions: modules
     # =====================================================================================
     def complete_modules(self, text, line, *ignored):
@@ -709,6 +782,45 @@ class BaseInterpreter(Cmd):
         return [x for x in options if x.startswith(text)]
 
     # =====================================================================================
+    # Auto-completion Functions: keys
+    # =====================================================================================
+    def complete_keys(self, text, line, *ignored):
+        '''
+        Auto-completion for keys command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('keys')
+
+        # If directly matching sub-command found, auto-complete that
+        if arg in subs:
+            return getattr(self, '_complete_keys_'+arg)(text, params)
+
+        # Else return all available matching command
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_keys_add(self, text, *ignored):
+        '''
+        Auto-completion for keys command: add
+        Searches for available key names and auto-completes
+
+        :param text: The keys add command to auto-complete, which has been typed so far
+        :type text: str
+        :returns: List of matching keys, if found
+        :rtype: list
+        '''
+        km = self._recon.get_key_manager()
+        return [x for x in km.get_key_names() if x.startswith(text)]
+    # Auto-complete keys "remove" in same way as add
+    _complete_keys_remove = _complete_keys_add
+
+    # =====================================================================================
     # Command Help Functions
     # =====================================================================================
     def help_modules(self):
@@ -762,6 +874,18 @@ class BaseInterpreter(Cmd):
         options = sorted(self._get_db_table_names())
         print(getattr(self, 'do_show').__doc__)
         print(f"{os.linesep}Usage: show <{'|'.join(options)}>{os.linesep}")
+
+    def help_keys(self):
+        print(getattr(self, 'do_keys').__doc__)
+        print(f"{os.linesep}Usage: keys <{'|'.join(self._get_subcommands('keys'))}> [...]{os.linesep}")
+
+    def _help_keys_add(self):
+        print(getattr(self, '_do_keys_add').__doc__)
+        print(f"{os.linesep}Usage: keys add <name> <value>{os.linesep}")
+
+    def _help_keys_remove(self):
+        print(getattr(self, '_do_keys_remove').__doc__)
+        print(f"{os.linesep}Usage: keys remove <name>{os.linesep}")
 
 
     # =====================================================================================
