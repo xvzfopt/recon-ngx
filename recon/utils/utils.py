@@ -7,6 +7,8 @@ import json
 import os
 import sys
 import re
+import html
+import ipaddress
 from contextlib import contextmanager
 
 # =====================================================================================
@@ -194,3 +196,78 @@ def print_http_response(response, console):
     if response.content:
         print(f"body:   {response.content}")
 
+def html_escape(s):
+    '''
+    Escapes HTML characters in the specified content
+
+    :param s: The string to escape
+    :type s: str
+    :return: The escaped string
+    :rtype: str
+    '''
+    escapes = {
+        '&': '&amp;',
+        '"': '&quot;',
+        "'": '&apos;',
+        '>': '&gt;',
+        '<': '&lt;',
+    }
+    return ''.join(escapes.get(c,c) for c in s)
+
+def html_unescape(s):
+    '''
+    Unescapes HTML markup and returns an unescaped string.
+
+    :param s: The string to unescape
+    :type s: str
+    :return: The unescaped string
+    :rtype: str
+    '''
+    return html.unescape(s)
+
+def hosts_to_domains(hosts, exclusions=[]):
+    '''
+    Parses a list of "hosts" and extracts all possible domains.
+
+    This function is a little misleading/amgiguous. What it's effectively doing is ignoring the lowest subdomain,
+    and then expanding all levels of the remaining domain name.
+    For example, "test.apis.google.com" would become ["apis.google.com", "google.com"]. Domain names in the
+    exclusions list will be skipped
+
+    :param hosts: The list of hosts to extract domains from
+    :type hosts: list
+    :param exclusions: A list of domain names that should be included and skipped (optional)
+    :type exclusions: list, optional
+    '''
+    domains = []
+
+    # Iterate hosts
+    for host in hosts:
+        elements = host.split('.')
+
+        # Recursively walk through the elements, extracting all possible (sub)domains
+        while len(elements) >= 2:
+            # account for domains stored as hosts
+            if len(elements) == 2:
+                domain = '.'.join(elements)
+            else:
+                # Drop the host element
+                domain = '.'.join(elements[1:])
+
+            # Apply any exclusions
+            if domain not in domains + exclusions:
+                domains.append(domain)
+            del elements[0]
+
+    return domains
+
+def cidr_to_list(string):
+    '''
+    Expands the provided CIDR string to a range of IP Addresses
+
+    :param string: The CIDR string to expand
+    :type string: str
+    :return: A list of IP Addresses
+    :rtype: list
+    '''
+    return [str(ip) for ip in ipaddress.ip_network(string)]
