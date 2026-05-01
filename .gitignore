@@ -6,3 +6,6 @@ scripts/
 # IDE Files
 .idea/
 *sublime*
+
+# Test/Tmp Files
+test/tmp/
