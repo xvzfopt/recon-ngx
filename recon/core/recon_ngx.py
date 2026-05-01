@@ -69,6 +69,7 @@ class ReconNGXApp:
         if verbosity not in [0, 1, 2]:
             self._console.error("Invalid verbosity level: '%s'. Must be 0, 1, or 2." % verbosity)
             sys.exit(1)
+        self._options["verbosity"] = verbosity
 
         # Initialise App Home
         self._init_home_dir()
