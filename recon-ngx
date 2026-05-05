@@ -8,6 +8,7 @@ import re
 import sys
 import os
 import argparse
+from pathlib import Path
 # prevent creation of compiled bytecode files
 sys.dont_write_bytecode = True
 
@@ -31,7 +32,7 @@ def get_version():
     version = None
 
     # Parse Version File
-    path = os.path.join(os.path.dirname(__file__), 'VERSION')
+    path = os.path.join(Path(__file__).resolve().parent, "VERSION")
     with open(path, "r") as version_file:
         for line in version_file.readlines():
             if line.startswith("version"):
