@@ -3,6 +3,7 @@
 # =====================================================================================
 import os
 import inspect
+import json
 
 # =====================================================================================
 # Imports Internal
@@ -65,6 +66,27 @@ class KeyManager:
         '''
         return self._query('DELETE FROM keys')
 
+    def migrate_key(self, key_name):
+        '''
+        Migrate the specified key from an old .dat file, to the Keys database
+        Note: This is an old recon-ng backward compatibility function. Likely here from a time
+        when keys were stored in a keys.dat file, instead of the current DB approach
+
+        :param key: The key to migrate
+        :type key:
+        '''
+        key_path = os.path.join(self._home_path, 'keys.dat')
+        if os.path.exists(key_path):
+            try:
+                key_data = json.loads(open(key_path, 'rb').read())
+                if key_data.get(key_name):
+                    self.add_key(key_name, key_data.get(key_name))
+            except:
+                self._console.error(f"Corrupt key file. Manual migration of '{key_name}' required.")
+
+    # =====================================================================================
+    # Getters
+    # =====================================================================================
     def get_keys(self):
         '''
         Gets the list of available API Keys
