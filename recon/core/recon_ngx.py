@@ -122,8 +122,10 @@ class ReconNGXApp:
                 self._console.output("Reloading module...")
                 module = self._m_interpreter.get_module()
                 is_loaded = self._module_manager.reload_module(module)
+
                 # Module reloaded successfully: don't exit back to framework
                 if is_loaded:
+                    self._m_interpreter.reload()
                     continue
             break
 
@@ -307,6 +309,15 @@ class ReconNGXApp:
         :rtype: int
         '''
         return self.get_option_value("verbosity")
+
+    def get_home_path(self):
+        '''
+        Gets the Recon-NGX application home path
+
+        :returns: The absolute path to the Recon-NGX app home directory
+        :type: str
+        '''
+        return self._home_path
 
     # =====================================================================================
     # Setters
