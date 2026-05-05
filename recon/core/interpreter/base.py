@@ -909,6 +909,12 @@ class BaseInterpreter(Cmd):
         '''
         self.prompt = "%s[%s] > " % (self._base_prompt, name)
 
+    def reload(self):
+        '''
+        Resets the interpreter's status
+        '''
+        self._status = None
+
     # =====================================================================================
     # Helpers
     # =====================================================================================
