@@ -1,21 +1,66 @@
-# The Recon-ng Framework
+# Recon-NGX
+Recon-NGX is a modern rewrite and extension of Tim Tomes’ [**recon-ng**](https://github.com/lanmaster53/recon-ng) OSINT framework.
 
-[Recon-ng content now available on Pluralsight!](https://app.pluralsight.com/library/courses/technical-information-gathering-recon-ng)
+It is a reimplementation, refactor, and long-term modernisation effort focused on improving 
+the architecture, maintainability, and reliability of the original framework, while preserving the 
+workflows and flexibility that make recon-ng such a valuable OSINT tool.
 
-Recon-ng is a full-featured reconnaissance framework designed with the goal of providing a powerful environment to conduct open source web-based reconnaissance quickly and thoroughly.
+> Recon-NGX is recon-ng, **eXtended**.
 
-Recon-ng has a look and feel similar to the Metasploit Framework, reducing the learning curve for leveraging the framework. However, it is quite different. Recon-ng is not intended to compete with existing frameworks, as it is designed exclusively for web-based open source reconnaissance. If you want to exploit, use the Metasploit Framework. If you want to social engineer, use the Social-Engineer Toolkit. If you want to conduct reconnaissance, use Recon-ng! See the [Wiki](https://github.com/lanmaster53/recon-ng/wiki) to get started.
+[IMAGE HERE]
 
-Recon-ng is a completely modular framework and makes it easy for even the newest of Python developers to contribute. See the [Development Guide](https://github.com/lanmaster53/recon-ng/wiki/Development-Guide) for more information on building and maintaining modules.
+The core framework has been rebuilt from the ground up using a cleaner architecture
+and more modern Python development practices. This has been done by splitting and organising
+large areas of functionality into separate packages, modules and classes. Recon-NGX includes
+numerous Quality-of-Life fixes, improvements and additions which pave the way for future updates
+and expansion.
 
-## Sponsors
+## Project Goals
+The goal of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem by 
+making it easier to maintain, extend and modernise.
 
-[![Black Hills Information Security](https://www.blackhillsinfosec.com/wp-content/uploads/2016/03/BHIS-logo-web.png)](http://www.blackhillsinfosec.com)
+Key goals include:
+* Improved maintainability and extensibility
+* Cleaner separation of responsibilities between components
+* Better long-term developer experience
+* Improved reliability and error handling
+* Preservation of compatibility with existing modules and workflows, where possible
+* Fixes and reliability improvements to existing modules
+* Creation of additional modules
+* Expansion of the module SDK to enhance module effectiveness and allow for development of more complex modules
+* Automatic dependency installation
 
-<br>
+# Features & Improvements
+Current Improvements include:
+* Complete rearchitecture of core framework
+* Decoupling and abstraction of internal systems into separate components
+* Improved and optimised error handling and messaging
+* Improved module validation process
+* Refactoring and expansion of obtuse/minified code to improve readability and maintainability
+* Expanded and improved code documentation 
 
-[![Practical Security Services](https://www.practisec.com/static/images/imgs/sticky-logo.png)](http://www.practisec.com)
+Additional improvements and architectural changes are ongoing as development continues.
 
-## Donations
+# Current Status
+Recon-NGX is currently under active development, and should not be considered production-ready
+at this stage. While close to an initial release with much of the refactoring work already done, 
+it is not yet feature-complete and work is still ongoing.
 
-Recon-ng is free software. However, large amounts of time and effort go into its continued development. If you are interested in financially supporting the project, you can view and assist in marketing the [Pluralsight content](https://app.pluralsight.com/library/courses/technical-information-gathering-recon-ng), or send a donation to tjt1980[at]gmail.com via PayPal. Thank you.
+#### Current Areas of Focus
+* Finalising module execution contexts and implementing outstanding module commands
+* Migrating legacy Framework.py and Base.py functionality into the new interpreter hierarchy
+* Stabilising compatibility with existing recon-ng modules
+* Reviewing and modernising old or unreliable modules
+* Improving internal architecture and developer tooling
+
+## Roadmap & Upcoming Features
+* Initial v1.0.0 release, with conversion to the new framework complete
+* Automatic module dependency installation
+* Creation of a Graphical User Interface
+
+## Relationship to recon-ng
+While Recon-NGX builds upon the ideas and code of recon-ng, it is an independent 
+community-driven project and is not endorsed by, affiliated with, or officially connected to Tim 
+Tomes or the original project.
+
+recon-ng can be found [Here](https://github.com/lanmaster53/recon-ng)
