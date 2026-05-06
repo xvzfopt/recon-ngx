@@ -15,7 +15,7 @@ large areas of functionality into separate packages, modules and classes. Recon-
 numerous Quality-of-Life fixes, improvements and additions which pave the way for future updates
 and expansion.
 
-## Project Goals
+## :brain: Project Goals
 The goal of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem by 
 making it easier to maintain, extend and modernise.
 
@@ -30,7 +30,7 @@ Key goals include:
 * Expansion of the module SDK to enhance module effectiveness and allow for development of more complex modules
 * Automatic dependency installation
 
-# Features & Improvements
+## Features & Improvements
 Current Improvements include:
 * Complete rearchitecture of core framework
 * Decoupling and abstraction of internal systems into separate components
@@ -41,7 +41,7 @@ Current Improvements include:
 
 Additional improvements and architectural changes are ongoing as development continues.
 
-# Current Status
+## Current Status
 Recon-NGX is currently under active development, and should not be considered production-ready
 at this stage. While close to an initial release with much of the refactoring work already done, 
 it is not yet feature-complete and work is still ongoing.
