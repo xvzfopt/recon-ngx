@@ -19,7 +19,7 @@ and expansion.
 The goal of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem by 
 making it easier to maintain, extend and modernise.
 
-Key goals include:
+**Key goals include:**
 * Improved maintainability and extensibility
 * Cleaner separation of responsibilities between components
 * Better long-term developer experience
@@ -46,7 +46,7 @@ Recon-NGX is currently under active development, and should not be considered pr
 at this stage. While close to an initial release with much of the refactoring work already done, 
 it is not yet feature-complete and work is still ongoing.
 
-#### :hammer_and_wrench: Current Areas of Focus
+**Current Areas of Focus:**
 * Finalising module execution contexts and implementing outstanding module commands
 * Migrating legacy Framework.py and Base.py functionality into the new interpreter hierarchy
 * Stabilising compatibility with existing recon-ng modules
