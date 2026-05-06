@@ -31,7 +31,7 @@ making it easier to maintain, extend and modernise.
 * Automatic dependency installation
 
 ## :gear: Features & Improvements
-Current Improvements include:
+**Current Improvements include:**
 * Complete rearchitecture of core framework
 * Decoupling and abstraction of internal systems into separate components
 * Improved and optimised error handling and messaging
@@ -62,5 +62,8 @@ it is not yet feature-complete and work is still ongoing.
 While Recon-NGX builds upon the ideas and code of recon-ng, it is an independent 
 community-driven project and is not endorsed by, affiliated with, or officially connected to Tim 
 Tomes or the original project.
+
+The history and contributions of recon-ng have been preserved to ensure proper credit is given 
+to those who contributed to the original project.
 
 recon-ng can be found [Here](https://github.com/lanmaster53/recon-ng)
