@@ -1,4 +1,4 @@
-# Recon-NGX
+![Recon-NGX Banner image](resources/rngx_banner.png)
 Recon-NGX is a modern rewrite and extension of Tim Tomes’ [**recon-ng**](https://github.com/lanmaster53/recon-ng) OSINT framework.
 
 It is a reimplementation, refactor, and long-term modernisation effort focused on improving 
@@ -7,7 +7,6 @@ workflows and flexibility that make recon-ng such a valuable OSINT tool.
 
 > Recon-NGX is recon-ng, **eXtended**.
 
-[IMAGE HERE]
 
 The core framework has been rebuilt from the ground up using a cleaner architecture
 and more modern Python development practices. This has been done by splitting and organising
