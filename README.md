@@ -15,7 +15,7 @@ large areas of functionality into separate packages, modules and classes. Recon-
 numerous Quality-of-Life fixes, improvements and additions which pave the way for future updates
 and expansion.
 
-## :brain: Project Goals
+## :shield: Project Goals
 The goal of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem by 
 making it easier to maintain, extend and modernise.
 
@@ -30,7 +30,7 @@ Key goals include:
 * Expansion of the module SDK to enhance module effectiveness and allow for development of more complex modules
 * Automatic dependency installation
 
-## Features & Improvements
+## :gear: Features & Improvements
 Current Improvements include:
 * Complete rearchitecture of core framework
 * Decoupling and abstraction of internal systems into separate components
@@ -41,24 +41,24 @@ Current Improvements include:
 
 Additional improvements and architectural changes are ongoing as development continues.
 
-## Current Status
+## :round_pushpin: Current Status
 Recon-NGX is currently under active development, and should not be considered production-ready
 at this stage. While close to an initial release with much of the refactoring work already done, 
 it is not yet feature-complete and work is still ongoing.
 
-#### Current Areas of Focus
+#### :hammer_and_wrench: Current Areas of Focus
 * Finalising module execution contexts and implementing outstanding module commands
 * Migrating legacy Framework.py and Base.py functionality into the new interpreter hierarchy
 * Stabilising compatibility with existing recon-ng modules
 * Reviewing and modernising old or unreliable modules
 * Improving internal architecture and developer tooling
 
-## Roadmap & Upcoming Features
+## :alembic: Roadmap & Upcoming Features
 * Initial v1.0.0 release, with conversion to the new framework complete
 * Automatic module dependency installation
 * Creation of a Graphical User Interface
 
-## Relationship to recon-ng
+## :warning: Relationship to recon-ng
 While Recon-NGX builds upon the ideas and code of recon-ng, it is an independent 
 community-driven project and is not endorsed by, affiliated with, or officially connected to Tim 
 Tomes or the original project.
