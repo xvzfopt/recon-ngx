@@ -56,7 +56,6 @@ class BaseModule:
         self._options = Options()
         self._summary_counts = {}
         self.keys = {}
-        self._default_source = None
 
         # =====================================================================================
         # Set query for SOURCE inputs
