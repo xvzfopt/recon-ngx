@@ -327,3 +327,46 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     # Internal Helpers
     # =====================================================================================
+    def _get_source_entries(self, params, query=None):
+        '''
+        Resolves and gets the source entries (input data) for the Module
+        '''
+        prefix = params.split()[0].lower()
+        entries = []
+
+        # =====================================================================================
+        # Process Source: Database Query
+        # =====================================================================================
+        if prefix in ['query', 'default']:
+            workspace = self._recon.get_current_workspace()
+            db = workspace.get_db()
+
+            query = ' '.join(params.split()[1:]) if prefix == 'query' else query
+            try:
+                results = db.query(query)
+            except sqlite3.OperationalError as oe:
+                raise ReconNGXException("Invalid source query: %s --> %s" % (type(oe).__name__, oe))
+
+            # Process Results
+            if len(results[0]) > 1:
+                entries += [x[:len(x)] for x in results]
+            else:
+                entries += [x[0] for x in results]
+
+        # =====================================================================================
+        # Process Source: File
+        # =====================================================================================
+        elif os.path.isfile(params):
+            entries += open(params).read().split()
+
+        # =====================================================================================
+        # Process Source: Source value itself
+        # =====================================================================================
+        else:
+            entries.append(params)
+
+        # Check we have some sources to use
+        if not entries:
+            raise ReconNGXException("Source contains no input.")
+
+        return entries
