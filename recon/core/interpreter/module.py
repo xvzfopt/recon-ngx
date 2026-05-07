@@ -68,6 +68,11 @@ class ModuleInterpreter(BaseInterpreter):
             print(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.get('required_keys'))}")
         print('')
 
+        # Print Path/Fully Qualified Name
+        print("Fully-Qualified Name (FQN)/Path:")
+        print(f"{self.SPACER}{self._module.get_fqn()}")
+        print('')
+
         # Print Module Description
         print('Description:')
         print(f"{self.SPACER}{textwrap.fill(self._module.meta['description'], 100, subsequent_indent=self.SPACER)}")
