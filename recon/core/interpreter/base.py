@@ -46,6 +46,7 @@ class BaseInterpreter(Cmd):
         self._recon = recon
         self._console = console
         self._status = None
+        self._script_path = None
 
         self._base_prompt = "[%s]" % self._recon.get_app_name()
 
@@ -85,6 +86,11 @@ class BaseInterpreter(Cmd):
         :param line: The line that was entered by the end-user
         :type line: str
         '''
+        # If Recording, write to script file
+        if self._script_path:
+            with open(self._script_path, "ab", encoding="uft-8") as script_file:
+                script_file.write(f"{line}{os.linesep}")
+
         return line
 
     def onecmd(self, line):
@@ -605,6 +611,44 @@ class BaseInterpreter(Cmd):
 
         # Display Keys
         self._console.table(table_data, header=["Name", "Value"])
+
+    # =====================================================================================
+    # Command Do Functions: "dashboard"
+    # =====================================================================================
+    def do_dashboard(self, params):
+        '''Displays a summary of activity'''
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Fetch dashboard Data
+        rows = db.query('SELECT * FROM dashboard ORDER BY 1')
+
+        # Check Data was returned
+        if not rows:
+            self._console.output('This workspace has no record of activity.')
+            return
+
+        # Display Module Activity
+        self._console.table(rows, header=['Module', 'Runs'], title='Activity Summary')
+
+        # Display counts for each entity type
+        tables = db.get_tables()
+        tdata = []
+        for table in tables:
+            count = db.query(f"SELECT COUNT(*) FROM `{table}`")[0][0]
+            tdata.append([table.title(), count])
+        self._console.table(tdata, header=['Category', 'Quantity'], title='Results Summary')
+
+    # =====================================================================================
+    # Command Do Functions: "pdb"
+    # =====================================================================================
+    def do_pdb(self, params):
+        '''Starts a Python Debugger session (dev only)'''
+        import pdb
+        pdb.set_trace()
+
 
 
     # =====================================================================================
