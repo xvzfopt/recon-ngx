@@ -4,6 +4,7 @@
 import os
 import re
 import sqlite3
+import sys
 from cmd import Cmd
 
 # =====================================================================================
@@ -47,6 +48,7 @@ class BaseInterpreter(Cmd):
         self._console = console
         self._status = None
         self._script_path = None
+        self._is_running_script = False
 
         self._base_prompt = "[%s]" % self._recon.get_app_name()
 
@@ -86,9 +88,12 @@ class BaseInterpreter(Cmd):
         :param line: The line that was entered by the end-user
         :type line: str
         '''
+        # TODO Test
+        if self._is_running_script:
+            print(f"{line}")
         # If Recording, write to script file
         if self._script_path:
-            with open(self._script_path, "ab", encoding="uft-8") as script_file:
+            with open(self._script_path, "a") as script_file:
                 script_file.write(f"{line}{os.linesep}")
 
         return line
@@ -107,6 +112,12 @@ class BaseInterpreter(Cmd):
         # Input: Empty Line
         if not line or not cmd:
             return self.emptyline()
+
+        # Input: Handle EOF when execution script files: Reset stdin
+        if line == 'EOF':
+            sys.stdin = sys.__stdin__
+            self._is_running_script = False
+            return
 
         # Find target function
         try:
@@ -649,7 +660,87 @@ class BaseInterpreter(Cmd):
         import pdb
         pdb.set_trace()
 
+    # =====================================================================================
+    # Command Do Functions: "script"
+    # =====================================================================================
+    def do_script(self, params):
+        '''Records and executes command scripts'''
 
+        # Check script subcommand specified
+        if not params:
+            self.help_script()
+            return
+
+        # Check valid script subcommand provided
+        arg, params = self._parse_params(params)
+        if arg in self._get_subcommands('script'):
+            return getattr(self, '_do_script_'+arg)(params)
+
+        # Otherwise print help
+        self.help_script()
+
+    def _do_script_record(self, params):
+        '''Records commands in a script file'''
+
+        # Check recording is not already underway
+        if not self._script_path:
+
+            # Parse output filename
+            path, params = self._parse_params(params)
+            if not path:
+                self._help_script_record()
+                return
+
+            # Expand home directory is included
+            path = os.path.expanduser(path)
+
+            # Check target file is writeable
+            if not utils.is_writeable(path):
+                self._console.output(f"Cannot record commands to '{path}'. File is not writeable.")
+            else:
+                self._script_path = path
+                open(path, 'w').close()
+                self._console.output(f"Recording commands to '{path}'.")
+        else:
+            self._console.output('Recording is already underway.')
+
+    def _do_script_stop(self, params):
+        '''Stops command recording'''
+
+        # Check recording is enabled
+        if self._script_path:
+            self._console.output(f"Recording stopped. Commands saved to '{self._script_path}'.")
+            self._script_path = None
+        else:
+            self._console.output('Recording is not enabled, or has already been stopped.')
+
+    def _do_script_status(self, params):
+        '''Provides the status of command recording'''
+        if self._script_path:
+            status = 'started'
+        else:
+            status = "stopped"
+        self._console.output(f"Command recording: {status}.")
+
+    def _do_script_execute(self, params):
+        '''Executes commands from a script file'''
+
+        # Check script file specified
+        if not params:
+            self._help_script_execute()
+            return
+
+        # Expand Path
+        path = os.path.expanduser(params)
+
+        # Load script into stdin
+        if os.path.exists(path):
+            # works even when called before Recon.start due
+            # to stdin waiting for the interactive prompt
+            sys.stdin = open(params)
+            self._is_running_script = True
+        else:
+            self._console.error(f"Script file '{path}' not found.")
 
     # =====================================================================================
     # Auto-completion Functions: modules
@@ -865,6 +956,45 @@ class BaseInterpreter(Cmd):
     _complete_keys_remove = _complete_keys_add
 
     # =====================================================================================
+    # Auto-completion Functions: script
+    # =====================================================================================
+    def complete_script(self, text, line, *ignored):
+        '''
+        Auto-completion for script command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('script')
+
+        # If directly matching sub-command found, auto-complete it
+        if arg in subs:
+            return getattr(self, '_complete_script_'+arg)(text, params)
+
+        # Else return all available matching subcommands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_script_record(self, text, *ignored):
+        '''
+        Auto-completion for script command: record
+        Placeholder: currently we have nothing more to provide for this command
+
+        :param text: The script record command to auto-complete, which has been typed so far
+        :type text: str
+        :returns: Empty placeholder list
+        :rtype: list
+        '''
+        return []
+    # Auto-complete script commands in same way as record: execute, stop, and status
+    _complete_script_execute = _complete_script_status = _complete_script_stop = _complete_script_record
+
+
+    # =====================================================================================
     # Command Help Functions
     # =====================================================================================
     def help_modules(self):
@@ -930,6 +1060,18 @@ class BaseInterpreter(Cmd):
     def _help_keys_remove(self):
         print(getattr(self, '_do_keys_remove').__doc__)
         print(f"{os.linesep}Usage: keys remove <name>{os.linesep}")
+
+    def help_script(self):
+        print(getattr(self, 'do_script').__doc__)
+        print(f"{os.linesep}Usage: script <{'|'.join(self._get_subcommands('script'))}> [...]{os.linesep}")
+
+    def _help_script_record(self):
+        print(getattr(self, '_do_script_record').__doc__)
+        print(f"{os.linesep}Usage: script record <filename>{os.linesep}")
+
+    def _help_script_execute(self):
+        print(getattr(self, '_do_script_execute').__doc__)
+        print(f"{os.linesep}Usage: script execute <filename>{os.linesep}")
 
 
     # =====================================================================================
