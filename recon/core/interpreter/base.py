@@ -11,6 +11,7 @@ from cmd import Cmd
 # Imports: Internal
 # =====================================================================================
 from recon.utils import utils
+from recon.core.output import ConsoleOutput
 from recon.core.exceptions import *
 
 # =====================================================================================
@@ -743,6 +744,29 @@ class BaseInterpreter(Cmd):
             self._console.error(f"Script file '{path}' not found.")
 
     # =====================================================================================
+    # Command Do Functions: "shell"
+    # =====================================================================================
+    def do_shell(self, params):
+        '''Executes shell commands'''
+
+        # Check command was provided
+        if not params:
+            self.help_shell()
+            return
+
+        # Execute Command
+        self._console.output(f"Command: {params}")
+        stdout, stderr = utils.execute_shell_command(params)
+
+        # Process Stdout
+        if stdout:
+            print(f"{ConsoleOutput.COLOR_O}{utils.to_unicode(stdout)}{ConsoleOutput.COLOR_N}", end='')
+
+        # Process Stderr
+        if stderr:
+            print(f"{ConsoleOutput.COLOR_R}{utils.to_unicode(stderr)}{ConsoleOutput.COLOR_N}", end='')
+
+    # =====================================================================================
     # Auto-completion Functions: modules
     # =====================================================================================
     def complete_modules(self, text, line, *ignored):
@@ -1073,6 +1097,9 @@ class BaseInterpreter(Cmd):
         print(getattr(self, '_do_script_execute').__doc__)
         print(f"{os.linesep}Usage: script execute <filename>{os.linesep}")
 
+    def help_shell(self):
+        print(getattr(self, 'do_shell').__doc__)
+        print(f"{os.linesep}Usage: [shell|!] <command>{os.linesep}")
 
     # =====================================================================================
     # Getters
