@@ -3,12 +3,16 @@
 # =====================================================================================
 import os
 import textwrap
+import sqlite3
+import socket
+import requests
 
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
 from .base import BaseInterpreter
-from recon.utils import utils
+from recon.utils import validators
+from recon.core.exceptions import *
 
 # =====================================================================================
 # Module Interpreter Class
@@ -211,9 +215,117 @@ class ModuleInterpreter(BaseInterpreter):
         else:
             self._console.error('Invalid option name.')
 
+    # =====================================================================================
+    # Command Do Functions: "reload"
+    # =====================================================================================
     def do_reload(self, params):
         '''Reloads the loaded module'''
         self._status = self.STATUS_RELOADED
+        return True
+
+    # =====================================================================================
+    # Command Do Functions: "input"
+    # =====================================================================================
+    def do_input(self, params):
+        '''Shows inputs based on the source option'''
+
+        # Check if Module has a Default Source set
+        if hasattr(self._module, '_default_source'):
+            try:
+                self._recon.validate_options()
+                inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
+                self._console.table([[x] for x in inputs], header=['Module Inputs'])
+            except Exception as e:
+                self._console.output(e.__str__())
+        else:
+            self._console.output('Source option not available for this module.')
+            
+    # =====================================================================================
+    # Command Do Functions: "run"
+    # =====================================================================================
+    def do_run(self, params):
+        '''Runs the loaded module'''
+
+        # Process Inputs
+        inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
+        self._module._validate_inputs(inputs)
+
+        # Run the Module!
+        try:
+            self._recon.validate_options()
+            if self._module.preflight():
+                self._module.run(inputs)
+        # Handler: Keyboard Interrupts from user
+        except KeyboardInterrupt:
+            print("")
+        # Handler: Connection Timeouts
+        except (requests.exceptions.Timeout, socket.timeout):
+            self._console.print_exception()
+            self._console.error('A request took too long to complete. If the issue persists, increase the global TIMEOUT option.')
+        # Handler: Framework/Validation Exception
+        except (ReconNGXException, validators.ValidationException):
+            self._console.print_exception()
+            if self._recon.get_verbosity() > 1:
+                raise
+        # Handler: Unexpected exceptions/errors
+        except Exception:
+            self._console.print_exception()
+            self._console.error('Something broken? See https://github.com/xvzfopt/recon-ngx/wiki/Troubleshooting#issue-reporting.')
+            if self._recon.get_verbosity() > 1:
+                raise
+
+        # Post run
+        # TODO : To be reviewed. _summary_counts doesn't actually seem to be used anywhere??
+        # TODO: Actually.. it's used by the web server. Check this
+        # finally:
+        #     # print module summary
+        #     if self._summary_counts:
+        #         self._console.heading('Summary', level=0)
+        #         for table in self._summary_counts:
+        #             new = self._summary_counts[table]['new']
+        #             cnt = self._summary_counts[table]['count']
+        #             if new > 0:
+        #                 method = getattr(self, 'alert')
+        #             else:
+        #                 method = getattr(self, 'output')
+        #             method(f"{cnt} total ({new} new) {table} found.")
+        
+    # =====================================================================================
+    # Command Do Functions: "modules"
+    # =====================================================================================
+    def _do_modules_load(self, params):
+        '''Loads a module'''
+
+        # Check target module specified
+        if not params:
+            self._help_modules_load()
+            return
+
+        # finds any modules that contain params
+        mm = self._recon.get_module_manager()
+        modules = mm.find_matching_installed_modules(params)
+
+        # Error: No matching modules found, OR multiple
+        if len(modules) != 1:
+            if not modules:
+                self._console.error('Invalid module name.')
+            else:
+                self._console.output(f"Multiple modules match '{params}'.")
+                self._list_modules(modules)
+            return
+
+        # Load Module
+        self._recon.open_module(modules[0])
+
+        # TODO - Review This
+        # # compensation for stdin being used for scripting and loading
+        # if framework.Framework._script:
+        #     end_string = sys.stdin.read()
+        # else:
+        #     end_string = 'EOF'
+        #     framework.Framework._load = 1
+        # sys.stdin = io.StringIO(f"modules load {modules[0]}{os.linesep}{end_string}")
+
         return True
 
     # =====================================================================================
