@@ -9,6 +9,7 @@ import sys
 import re
 import html
 import ipaddress
+import subprocess
 from contextlib import contextmanager
 
 # =====================================================================================
@@ -271,3 +272,23 @@ def cidr_to_list(string):
     :rtype: list
     '''
     return [str(ip) for ip in ipaddress.ip_network(string)]
+
+
+def execute_shell_command(command):
+    '''
+    Executes a shell command
+    '''
+    # Execute Command
+    proc = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE
+    )
+
+    # Process Outputs
+    stdout = proc.stdout.read()
+    stderr = proc.stderr.read()
+
+    return stdout, stderr
