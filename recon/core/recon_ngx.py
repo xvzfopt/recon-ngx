@@ -14,7 +14,7 @@ from recon.core.options import Options
 from recon.utils import utils
 from recon.core.db import KeysDB
 from recon.core.output import ConsoleOutput
-from recon.core._module import ModuleManager
+from recon.core.module import ModuleManager
 from recon.core.workspace import WorkspaceManager
 from recon.core.interpreter import ModuleInterpreter
 from recon.core.interpreter import FrameworkInterpreter

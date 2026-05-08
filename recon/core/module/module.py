@@ -12,14 +12,12 @@ import requests
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
-from recon.core import framework
 from recon.core.options import Options
 from recon.utils import validators, utils
 
 # =====================================================================================
 # Recon-NGX Base Module
 # =====================================================================================
-# class BaseModule(framework.Framework):
 class BaseModule:
     '''
     Recon-NGX Base Module

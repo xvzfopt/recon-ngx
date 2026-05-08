@@ -15,9 +15,8 @@ sys.dont_write_bytecode = True
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
-from recon.core import base
 from recon.core import ReconNGXApp
-from recon.core.output import ConsoleOutput
+from recon.core.output import colors
 
 # =====================================================================================
 # Functions
@@ -55,7 +54,7 @@ def launch_ui(args):
     try:
         import readline
     except ImportError:
-        print(f"{ConsoleOutput.COLOR_R}[!] Module 'readline' not available. Tab complete disabled.{ConsoleOutput.COLOR_N}")
+        print(f"{colors.COLOR_R}[!] Module 'readline' not available. Tab complete disabled.{colors.COLOR_N}")
     else:
         import rlcompleter
         if 'libedit' in readline.__doc__:
