@@ -157,6 +157,15 @@ class ReconNGXApp:
             if not self.is_option_set(option_name) and self.is_option_required(option_name):
                 raise ValidationException("Value required for the '%s' option." % option_name)
 
+    def execute_script(self, path):
+        '''
+        Executes a script file. To be called when a script is automatically passed via the CLI
+
+        :param path: The path of the script to be executed
+        :type path: str
+        '''
+        self._f_interpreter._do_script_execute(path)
+
     # =====================================================================================
     # Getters
     # =====================================================================================

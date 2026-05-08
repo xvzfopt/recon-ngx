@@ -78,11 +78,11 @@ def launch_ui(args):
 
 
     # Initialise Recon-NGX
-    recon = ReconNGXApp(**flags)
+    rngx = ReconNGXApp(**flags)
 
     # # check for and run script session
-    # if args.script_file:
-    #     recon_ngx._do_script_execute(args.script_file)
+    if args.script_file:
+        rngx.execute_script(args.script_file)
     # =====================================================================================
     # !!! Launch Recon-NGX !!!
     # =====================================================================================
@@ -90,7 +90,7 @@ def launch_ui(args):
         options = []
         if args.workspace:
             options.append(args.workspace)
-        recon.start(*options)
+        rngx.start(*options)
     except KeyboardInterrupt:
         print("")
 
