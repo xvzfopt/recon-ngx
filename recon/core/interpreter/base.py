@@ -53,7 +53,7 @@ class BaseInterpreter(Cmd):
         self._is_running_script = False
         self._is_spooling = False
 
-        self._base_prompt = f"[{colors.COLOR_RNGX}{self._recon.get_app_name()}{colors.COLOR_N}]"
+        self._base_prompt = f"[{colors.COLOR_RNGX_BOLD}{self._recon.get_app_name()}{colors.COLOR_N}]"
 
         # Set header for "help" command
         self.doc_header = 'Commands (type [help|?] <topic>):'
