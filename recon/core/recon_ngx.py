@@ -37,7 +37,21 @@ class ReconNGXApp:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, version, author, verbosity, stealth, analytics, marketplace, accessible) :
+    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible) :
+        '''
+        Recon-NGX Core App Consructor
+
+        :param version: The Recon-NGX app version
+        :type version: str
+        :param author: The Recon-NGX app author
+        :type author: str
+        :param verbosity: The Recon-NGX app verbosity level
+        :type verbosity: int
+        :param check_version: Whether the app should check to see if updates are available
+        :type check_version: bool
+        :param marketplace_enabled: Whether the marketplace is enabled
+        :type marketplace_enabled: bool
+        '''
         super(ReconNGXApp, self).__init__()
 
         # Initialise Base Properties
@@ -46,6 +60,7 @@ class ReconNGXApp:
         self._version = version
         self._author = author
         self._workspace = None
+        self._marketplace_enabled = marketplace_enabled
         self._base_prompt = "[%s]" % self._name
 
         # Initialise Global Options
@@ -78,7 +93,8 @@ class ReconNGXApp:
 
         # Initialise Module Manager
         self._module_manager = ModuleManager(self._home_path, self._console, self)
-        self._module_manager.fetch_marketplace_index()
+        if self.is_marketplace_enabled():
+            self._module_manager.fetch_marketplace_index()
 
         # Initialise Workspace Manager
         self._workspace_manager = WorkspaceManager(self._workspaces_path, self._console, "default")
@@ -87,7 +103,8 @@ class ReconNGXApp:
         self._key_manager = KeyManager(self._home_path, self._console)
 
         # Run Version Check
-        self._check_version()
+        if check_version:
+            self._check_version()
 
     def start(self, workspace_name="default"):
         '''
@@ -299,8 +316,7 @@ class ReconNGXApp:
         :returns: True if the Marketplace is enabled, otherwise False
         :rtype: bool
         '''
-        # TODO TODO TODO
-        return True
+        return self._marketplace_enabled
 
     def get_verbosity(self):
         '''
