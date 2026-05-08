@@ -92,8 +92,8 @@ class FrameworkInterpreter(BaseInterpreter):
             header = ('Path', 'Version', 'Status', 'Updated', 'D', 'K')
 
             self._console.table(rows, header=header)
-            print(f"{self.SPACER}D = Has dependencies. See info for details.")
-            print(f"{self.SPACER}K = Requires keys. See info for details.{os.linesep}")
+            self._console.write(f"{self.SPACER}D = Has dependencies. See info for details.")
+            self._console.write(f"{self.SPACER}K = Requires keys. See info for details.{os.linesep}")
         else:
             self._console.error('No modules found.')
             self._help_marketplace_search()
@@ -251,7 +251,7 @@ class FrameworkInterpreter(BaseInterpreter):
 
         if index:
             markup = yaml.safe_dump(index)
-            print(markup)
+            self._console.write(markup)
             # Write to file if file name specified
             if dest_file:
                 utils.write_local_file(dest_file, markup)
@@ -522,56 +522,56 @@ class FrameworkInterpreter(BaseInterpreter):
     # Command Help Functions
     # =====================================================================================
     def help_marketplace(self):
-        print(getattr(self, 'do_marketplace').__doc__)
-        print(f"{os.linesep}Usage: marketplace <{'|'.join(self._get_subcommands('marketplace'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_marketplace').__doc__)
+        self._console.write(f"{os.linesep}Usage: marketplace <{'|'.join(self._get_subcommands('marketplace'))}> [...]{os.linesep}")
 
     def _help_marketplace_search(self):
-        print(getattr(self, '_do_marketplace_search').__doc__)
-        print(f"{os.linesep}Usage: marketplace search [<regex>]{os.linesep}")
+        self._console.write(getattr(self, '_do_marketplace_search').__doc__)
+        self._console.write(f"{os.linesep}Usage: marketplace search [<regex>]{os.linesep}")
 
     def _help_marketplace_info(self):
-        print(getattr(self, '_do_marketplace_info').__doc__)
-        print(f"{os.linesep}Usage: marketplace info <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(getattr(self, '_do_marketplace_info').__doc__)
+        self._console.write(f"{os.linesep}Usage: marketplace info <<path>|<prefix>|all>{os.linesep}")
 
     def _help_marketplace_install(self):
-        print(getattr(self, '_do_marketplace_install').__doc__)
-        print(f"{os.linesep}Usage: marketplace install <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(getattr(self, '_do_marketplace_install').__doc__)
+        self._console.write(f"{os.linesep}Usage: marketplace install <<path>|<prefix>|all>{os.linesep}")
 
     def _help_marketplace_remove(self):
-        print(getattr(self, '_do_marketplace_remove').__doc__)
-        print(f"{os.linesep}Usage: marketplace remove <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(getattr(self, '_do_marketplace_remove').__doc__)
+        self._console.write(f"{os.linesep}Usage: marketplace remove <<path>|<prefix>|all>{os.linesep}")
 
     def help_workspaces(self):
-        print(getattr(self, 'do_workspaces').__doc__)
-        print(f"{os.linesep}Usage: workspaces <{'|'.join(self._get_subcommands('workspaces'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_workspaces').__doc__)
+        self._console.write(f"{os.linesep}Usage: workspaces <{'|'.join(self._get_subcommands('workspaces'))}> [...]{os.linesep}")
 
     def _help_workspaces_create(self):
-        print(getattr(self, '_do_workspaces_create').__doc__)
-        print(f"{os.linesep}Usage: workspace create <name>{os.linesep}")
+        self._console.write(getattr(self, '_do_workspaces_create').__doc__)
+        self._console.write(f"{os.linesep}Usage: workspace create <name>{os.linesep}")
 
     def _help_workspaces_load(self):
-        print(getattr(self, '_do_workspaces_load').__doc__)
-        print(f"{os.linesep}Usage: workspace load <name>{os.linesep}")
+        self._console.write(getattr(self, '_do_workspaces_load').__doc__)
+        self._console.write(f"{os.linesep}Usage: workspace load <name>{os.linesep}")
 
     def _help_workspaces_remove(self):
-        print(getattr(self, '_do_workspaces_remove').__doc__)
-        print(f"{os.linesep}Usage: workspace remove <name>{os.linesep}")
+        self._console.write(getattr(self, '_do_workspaces_remove').__doc__)
+        self._console.write(f"{os.linesep}Usage: workspace remove <name>{os.linesep}")
 
     def help_snapshots(self):
-        print(getattr(self, 'do_snapshots').__doc__)
-        print(f"{os.linesep}Usage: snapshots <{'|'.join(self._get_subcommands('snapshots'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_snapshots').__doc__)
+        self._console.write(f"{os.linesep}Usage: snapshots <{'|'.join(self._get_subcommands('snapshots'))}> [...]{os.linesep}")
 
     def _help_snapshots_load(self):
-        print(getattr(self, '_do_snapshots_load').__doc__)
-        print(f"{os.linesep}Usage: snapshots load <name>{os.linesep}")
+        self._console.write(getattr(self, '_do_snapshots_load').__doc__)
+        self._console.write(f"{os.linesep}Usage: snapshots load <name>{os.linesep}")
 
     def _help_snapshots_remove(self):
-        print(getattr(self, '_do_snapshots_remove').__doc__)
-        print(f"{os.linesep}Usage: snapshots remove <name>{os.linesep}")
+        self._console.write(getattr(self, '_do_snapshots_remove').__doc__)
+        self._console.write(f"{os.linesep}Usage: snapshots remove <name>{os.linesep}")
 
     def help_index(self):
-        print(getattr(self, 'do_index').__doc__)
-        print(f"{os.linesep}Usage: index <module|all> <output file>{os.linesep}")
+        self._console.write(getattr(self, 'do_index').__doc__)
+        self._console.write(f"{os.linesep}Usage: index <module|all> <output file>{os.linesep}")
 
 
 
