@@ -42,6 +42,7 @@ class ReconNGXApp:
 
         # Initialise Base Properties
         self._name = "recon-ngx"
+        self._displayname = "Recon-NGX"
         self._version = version
         self._author = author
         self._workspace = None
@@ -52,7 +53,7 @@ class ReconNGXApp:
         self._options.initialise_global_options(self._version)
 
         # Initialise Console Output
-        self._console = ConsoleOutput(self._options)
+        self._console = ConsoleOutput(self._options, accessible)
 
         # Interpreter instances
         self._f_interpreter = FrameworkInterpreter(self, self._console)
@@ -189,7 +190,7 @@ class ReconNGXApp:
         :returns: The Recon-NGX application name
         :rtype: str
         '''
-        return self._name
+        return self._displayname
 
     def get_module_manager(self):
         '''
