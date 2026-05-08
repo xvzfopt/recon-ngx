@@ -61,50 +61,50 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     def do_info(self, params):
         '''Shows details about the loaded module'''
-        print('')
+        self._console.write('')
 
         # Print Basic Module information
         for item in ['name', 'author', 'version']:
-            print(f"{item.title().rjust(10)}: {self._module.meta[item]}")
+            self._console.write(f"{item.title().rjust(10)}: {self._module.meta[item]}")
 
         # Print any required Keys
         if self._module.meta.get('required_keys'):
-            print(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.get('required_keys'))}")
-        print('')
+            self._console.write(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.get('required_keys'))}")
+        self._console.write('')
 
         # Print Path/Fully Qualified Name
-        print("Fully-Qualified Name (FQN)/Path:")
-        print(f"{self.SPACER}{self._module.get_fqn()}")
-        print('')
+        self._console.write("Fully-Qualified Name (FQN)/Path:")
+        self._console.write(f"{self.SPACER}{self._module.get_fqn()}")
+        self._console.write('')
 
         # Print Module Description
-        print('Description:')
-        print(f"{self.SPACER}{textwrap.fill(self._module.meta['description'], 100, subsequent_indent=self.SPACER)}")
-        print('')
+        self._console.write('Description:')
+        self._console.write(f"{self.SPACER}{textwrap.fill(self._module.meta['description'], 100, subsequent_indent=self.SPACER)}")
+        self._console.write('')
 
         # Print Module Option information
-        print('Options:', end='')
+        self._console.write('Options:', end='')
         self._list_options(self._module._options)
 
         # Print Module Source information (TODO TBC?)
         if hasattr(self, '_default_source'):
-            print('Source Options:')
-            print(f"{self.SPACER}{'default'.ljust(15)}{self._default_source}")
-            print(f"{self.SPACER}{'<string>'.ljust(15)}string representing a single input")
-            print(f"{self.SPACER}{'<path>'.ljust(15)}path to a file containing a list of inputs")
-            print(f"{self.SPACER}{'query <sql>'.ljust(15)}database query returning one column of inputs")
-            print('')
+            self._console.write('Source Options:')
+            self._console.write(f"{self.SPACER}{'default'.ljust(15)}{self._default_source}")
+            self._console.write(f"{self.SPACER}{'<string>'.ljust(15)}string representing a single input")
+            self._console.write(f"{self.SPACER}{'<path>'.ljust(15)}path to a file containing a list of inputs")
+            self._console.write(f"{self.SPACER}{'query <sql>'.ljust(15)}database query returning one column of inputs")
+            self._console.write('')
 
         # Print Module Comments
         if self._module.meta.get('comments'):
-            print('Comments:')
+            self._console.write('Comments:')
             for comment in self._module.meta['comments']:
                 prefix = '* '
                 if comment.startswith('\t'):
                     prefix = self.SPACER+'- '
                     comment = comment[1:]
-                print(f"{self.SPACER}{textwrap.fill(prefix+comment, 100, subsequent_indent=self.SPACER)}")
-            print('')
+                self._console.write(f"{self.SPACER}{textwrap.fill(prefix+comment, 100, subsequent_indent=self.SPACER)}")
+            self._console.write('')
 
 
     # =====================================================================================
@@ -131,7 +131,7 @@ class ModuleInterpreter(BaseInterpreter):
         option_name = option.upper()
         if option_name in options:
             options[option_name] = value
-            print(f"{option_name} => {value}")
+            self._console.write(f"{option_name} => {value}")
             workspace.set_config_property(option_name, self._module._fqn, options=options)
         else:
             self._console.error('Invalid option name.')
@@ -193,7 +193,7 @@ class ModuleInterpreter(BaseInterpreter):
         option_name = option.upper()
         if option_name in goptions:
             goptions[option_name] = value
-            print(f"{option_name} => {value}")
+            self._console.write(f"{option_name} => {value}")
             workspace.set_config_property(option_name, options=goptions)
         else:
             self._console.error('Invalid option name.')
@@ -257,7 +257,7 @@ class ModuleInterpreter(BaseInterpreter):
                 self._module.run(inputs)
         # Handler: Keyboard Interrupts from user
         except KeyboardInterrupt:
-            print("")
+            self._console.write("")
         # Handler: Connection Timeouts
         except (requests.exceptions.Timeout, socket.timeout):
             self._console.print_exception()
@@ -413,16 +413,16 @@ class ModuleInterpreter(BaseInterpreter):
     # Command Help Functions
     # =====================================================================================
     def help_goptions(self):
-        print(getattr(self, 'do_goptions').__doc__)
-        print(f"{os.linesep}Usage: goptions <{'|'.join(self._get_subcommands('goptions'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_goptions').__doc__)
+        self._console.write(f"{os.linesep}Usage: goptions <{'|'.join(self._get_subcommands('goptions'))}> [...]{os.linesep}")
 
     def _help_goptions_set(self):
-        print(getattr(self, '_do_goptions_set').__doc__)
-        print(f"{os.linesep}Usage: goptions set <option> <value>{os.linesep}")
+        self._console.write(getattr(self, '_do_goptions_set').__doc__)
+        self._console.write(f"{os.linesep}Usage: goptions set <option> <value>{os.linesep}")
 
     def _help_goptions_unset(self):
-        print(getattr(self, '_do_goptions_unset').__doc__)
-        print(f"{os.linesep}Usage: goptions unset <option>{os.linesep}")
+        self._console.write(getattr(self, '_do_goptions_unset').__doc__)
+        self._console.write(f"{os.linesep}Usage: goptions unset <option>{os.linesep}")
 
     # =====================================================================================
     # Getters
