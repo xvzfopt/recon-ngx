@@ -10,6 +10,7 @@ import sys
 # Imports: Internal
 # =====================================================================================
 from recon.utils import utils
+from . import colors
 from .banner import *
 from recon.core.exceptions import *
 
@@ -26,21 +27,15 @@ class ConsoleOutput:
     # =====================================================================================
     RULER   = '-'
     SPACER  = '  '
-    NAME    = "recon-ngx"
+    NAME    = "Recon-NGX"
 
     # =====================================================================================
     # Colours
     # =====================================================================================
-    COLOR_N = '\033[m'      # native
-    COLOR_R = '\033[31m'    # red
-    COLOR_G = '\033[32m'    # green
-    COLOR_O = '\033[33m'    # orange
-    COLOR_B = '\033[34m'    # blue
-
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, options):
+    def __init__(self, options, accessible):
         '''
         Constructor.
 
@@ -51,7 +46,7 @@ class ConsoleOutput:
         self._spool_dest = None
         self._stdout = sys.stdout
 
-        self._accessible = False
+        self._accessible = accessible
         self._global_options = options
 
     def write(self, line, end="\n"):
@@ -135,18 +130,29 @@ class ConsoleOutput:
         '''
 
         # Build Output --> Accessible
+        author_block = ""
         if self._accessible:
             banner = BANNER_SMALL
-            author_string = f"{self.COLOR_O}{self.NAME}, version {version}, by {author}{self.COLOR_N}"
+            author_block += f"{colors.COLOR_O}{self.NAME}, version {version}, by {author}{colors.COLOR_N}"
         # Build Output --> Standard
         else:
             banner = BANNER_DEFAULT
             banner_len = len(max(banner.split(os.linesep), key=len))
-            author_string = '{0:^{1}}'.format(f"{self.COLOR_O}[{self.NAME} v{version}, {author}]{self.COLOR_N}", banner_len + 8)
+            divider_string      = '{0:^{1}}'.format(f"{colors.COLOR_O}============================{colors.COLOR_N}", banner_len + 8)
+            rngx_author_string  = '{0:^{1}}'.format(f"{colors.COLOR_O}[{self.NAME} v{version}, {author}]{colors.COLOR_N}", banner_len + 8)
+            derivation_string   = '{0:^{1}}'.format(f"{colors.COLOR_O}Derived from{colors.COLOR_N}", banner_len + 8)
+            rng_author_string   = '{0:^{1}}'.format(f"{colors.COLOR_O}[recon-ng v5.1.2, Tim Tomes (@lanmaster53)]{colors.COLOR_N}", banner_len + 8)
 
-        # Print Banner & Author
+            # Build Author Block
+            author_block += rngx_author_string + "\n"
+            author_block += divider_string + "\n"
+            author_block += derivation_string + "\n"
+            author_block += divider_string + "\n"
+            author_block += rng_author_string + "\n"
+
+        # Print Banner & Author Block
         self.write(banner)
-        self.write(author_string)
+        self.write(author_block)
         self.write('')
 
         # Get Total Module Count
@@ -160,7 +166,7 @@ class ConsoleOutput:
         for category in loaded_categories:
             module_count = len(loaded_categories[category])
             cnt = f"[{module_count}]"
-            self.write(f"{self.COLOR_B}{cnt.ljust(max_count + 1)} {category.capitalize()} modules{self.COLOR_N}")
+            self.write(f"{colors.COLOR_B}{cnt.ljust(max_count + 1)} {category.capitalize()} modules{colors.COLOR_N}")
         self.write('')
 
     def print_exception(self, line=''):
@@ -185,9 +191,9 @@ class ConsoleOutput:
             self.error(line)
         # Verbosity 2: Print Stack Trace
         elif self._global_options['verbosity'] == 2:
-            self.write(f"{self.COLOR_R}{'-'*60}")
+            self.write(f"{colors.COLOR_R}{'-'*60}")
             traceback.print_exc()
-            self.write(f"{'-'*60}{self.COLOR_N}")
+            self.write(f"{'-'*60}{colors.COLOR_N}")
 
     def error(self, line):
         '''
@@ -199,7 +205,7 @@ class ConsoleOutput:
         if not re.search('[.,;!?]$', line):
             line += '.'
         line = line[:1].upper() + line[1:]
-        self.write(f"{self.COLOR_R}[!] {line}{self.COLOR_N}")
+        self.write(f"{colors.COLOR_R}[!] {line}{colors.COLOR_N}")
 
     def output(self, line):
         '''
@@ -208,7 +214,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        self.write(f"{self.COLOR_B}[*]{self.COLOR_N} {line}")
+        self.write(f"{colors.COLOR_B}[*]{colors.COLOR_N} {line}")
         pass
 
     def alert(self, line):
@@ -218,7 +224,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        self.write(f"{self.COLOR_G}[*]{self.COLOR_N} {line}")
+        self.write(f"{colors.COLOR_G}[*]{colors.COLOR_N} {line}")
 
     def verbose(self, line):
         '''
