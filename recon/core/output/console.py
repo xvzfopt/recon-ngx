@@ -4,6 +4,7 @@
 import re
 import traceback
 import os
+import sys
 
 # =====================================================================================
 # Imports: Internal
@@ -46,9 +47,81 @@ class ConsoleOutput:
         :param options: Global options object
         :type options: Options
         '''
+        self._console_handler = None
+        self._spool_dest = None
+        self._stdout = sys.stdout
+
         self._accessible = False
         self._global_options = options
 
+    def write(self, line, end="\n"):
+        '''
+        Main Console write function. Provides Cmd class with a stdout abstraction layer so that we can handle
+        spooling
+
+        :param line: The line to write/print
+        :type line: str
+        :param end: Optional line delimiter override. Defaults to newline (\n)
+        :type end: str, optional
+        '''
+        # Append line delimiter if not present
+        if not line.endswith(end):
+            line += end
+
+        # Write to stdout
+        self._stdout.write(line)
+
+        # Spool to file
+        if self._spool_dest:
+            self.spool_to_file(line)
+
+    # =====================================================================================
+    # Spooling Functions
+    # =====================================================================================
+    def spool_to_file(self, line):
+        with open(self._spool_dest, "a") as spool_file:
+            spool_file.write(line)
+
+    def enable_spooling(self, path):
+        '''
+        Sets up output spooling to the specified file
+
+        :param path: The path to the spool file
+        :type path: str
+        '''
+
+        # Clear File
+        open(path, "w").close()
+        self._spool_dest = path
+
+    def disable_spooling(self):
+        '''
+        Disables file spooling
+        '''
+        if self._spool_dest:
+            self._spool_dest = None
+
+    def is_spooling(self):
+        '''
+        Checks if output and input are currently being spooled to a file
+
+        :returns:True if output and input are being spooled to a file
+        :rtype: bool
+        '''
+        return self._spool_dest is not None
+
+    def get_spool_file_path(self):
+        '''
+        Gets the path to the target spool file
+
+        :returns: The path to the target spool file
+        :rtype: str
+        '''
+        return self._spool_dest
+
+    # =====================================================================================
+    # General Output functions
+    # =====================================================================================
     def print_banner(self, version, author, loaded_categories):
         '''
         Prints the recon-ngx application Banner
@@ -72,9 +145,9 @@ class ConsoleOutput:
             author_string = '{0:^{1}}'.format(f"{self.COLOR_O}[{self.NAME} v{version}, {author}]{self.COLOR_N}", banner_len + 8)
 
         # Print Banner & Author
-        print(banner)
-        print(author_string)
-        print('')
+        self.write(banner)
+        self.write(author_string)
+        self.write('')
 
         # Get Total Module Count
         max_count = 0
@@ -87,8 +160,8 @@ class ConsoleOutput:
         for category in loaded_categories:
             module_count = len(loaded_categories[category])
             cnt = f"[{module_count}]"
-            print(f"{self.COLOR_B}{cnt.ljust(max_count + 1)} {category.capitalize()} modules{self.COLOR_N}")
-        print('')
+            self.write(f"{self.COLOR_B}{cnt.ljust(max_count + 1)} {category.capitalize()} modules{self.COLOR_N}")
+        self.write('')
 
     def print_exception(self, line=''):
         '''
@@ -112,9 +185,9 @@ class ConsoleOutput:
             self.error(line)
         # Verbosity 2: Print Stack Trace
         elif self._global_options['verbosity'] == 2:
-            print(f"{self.COLOR_R}{'-'*60}")
+            self.write(f"{self.COLOR_R}{'-'*60}")
             traceback.print_exc()
-            print(f"{'-'*60}{self.COLOR_N}")
+            self.write(f"{'-'*60}{self.COLOR_N}")
 
     def error(self, line):
         '''
@@ -126,7 +199,7 @@ class ConsoleOutput:
         if not re.search('[.,;!?]$', line):
             line += '.'
         line = line[:1].upper() + line[1:]
-        print(f"{self.COLOR_R}[!] {line}{self.COLOR_N}")
+        self.write(f"{self.COLOR_R}[!] {line}{self.COLOR_N}")
 
     def output(self, line):
         '''
@@ -135,7 +208,8 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        print(f"{self.COLOR_B}[*]{self.COLOR_N} {line}")
+        self.write(f"{self.COLOR_B}[*]{self.COLOR_N} {line}")
+        pass
 
     def alert(self, line):
         '''
@@ -144,7 +218,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        print(f"{self.COLOR_G}[*]{self.COLOR_N} {line}")
+        self.write(f"{self.COLOR_G}[*]{self.COLOR_N} {line}")
 
     def verbose(self, line):
         '''
@@ -175,17 +249,17 @@ class ConsoleOutput:
         :param level: The header/title indentation level
         '''
         line = line
-        print('')
+        self.write('')
 
         # Indentation Level: 0
         if level == 0:
-            print(self.RULER * len(line))
-            print(line.upper())
-            print(self.RULER * len(line))
+            self.write(self.RULER * len(line))
+            self.write(line.upper())
+            self.write(self.RULER * len(line))
         # Indentation Level: 1
         if level == 1:
-            print(f"{self.SPACER}{line.title()}")
-            print(f"{self.SPACER}{self.RULER * len(line)}")
+            self.write(f"{self.SPACER}{line.title()}")
+            self.write(f"{self.SPACER}{self.RULER * len(line)}")
 
     def table(self, data, header=[], title=''):
         '''
@@ -235,30 +309,33 @@ class ConsoleOutput:
             data_str = f"{self.SPACER}| {'%s | '*(cols_count-1)}%s |"
 
             # Print Top of ascii table
-            print('')
-            print(separator)
+            self.write('')
+            self.write(separator)
 
             # Print Table Title
             if title:
-                print(f"{self.SPACER}| {title.center(tdata_len)} |")
-                print(separator)
+                self.write(f"{self.SPACER}| {title.center(tdata_len)} |")
+                self.write(separator)
 
             # Print Table Header
             if header:
                 rdata = tdata.pop(0)
                 data_sub = tuple([rdata[i].center(col_lengths[i]) for i in range(0,cols_count)])
-                print(data_str % data_sub)
-                print(separator)
+                self.write(data_str % data_sub)
+                self.write(separator)
 
             # Print Table Row Data
             for rdata in tdata:
                 data_sub = tuple([utils.to_unicode_str(rdata[i]).ljust(col_lengths[i]) if rdata[i] != None else ''.ljust(col_lengths[i]) for i in range(0,cols_count)])
-                print(data_str % data_sub)
+                self.write(data_str % data_sub)
 
             # Print bottom of ascii table
-            print(separator)
-            print('')
+            self.write(separator)
+            self.write('')
 
+    # =====================================================================================
+    # Setters
+    # =====================================================================================
     def set_accessibility(self, accessible):
         '''
         Turns the accessibility mode on/off
