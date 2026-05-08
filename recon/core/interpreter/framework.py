@@ -94,6 +94,8 @@ class FrameworkInterpreter(BaseInterpreter):
             self._console.table(rows, header=header)
             self._console.write(f"{self.SPACER}D = Has dependencies. See info for details.")
             self._console.write(f"{self.SPACER}K = Requires keys. See info for details.{os.linesep}")
+            self._console.write("")
+            self._console.write(f"{self.SPACER}Total Results: {len(modules)}" )
         else:
             self._console.error('No modules found.')
             self._help_marketplace_search()
