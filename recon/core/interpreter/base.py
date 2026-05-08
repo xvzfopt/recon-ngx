@@ -12,6 +12,7 @@ from cmd import Cmd
 # =====================================================================================
 from recon.utils import utils
 from recon.core.output import ConsoleOutput
+from recon.core.output import colors
 from recon.core.exceptions import *
 
 # =====================================================================================
@@ -52,13 +53,13 @@ class BaseInterpreter(Cmd):
         self._is_running_script = False
         self._is_spooling = False
 
-        self._base_prompt = "[%s]" % self._recon.get_app_name()
+        self._base_prompt = f"[{colors.COLOR_RNGX}{self._recon.get_app_name()}{colors.COLOR_N}]"
 
         # Set header for "help" command
         self.doc_header = 'Commands (type [help|?] <topic>):'
 
         # Set Help Output for when no help is available for specified command
-        self.nohelp = f"{ConsoleOutput.COLOR_R}[!] No help on %s{ConsoleOutput.COLOR_N}"
+        self.nohelp = f"{colors.COLOR_R}[!] No help on %s{colors.COLOR_N}"
 
     def start(self):
         '''
@@ -775,11 +776,11 @@ class BaseInterpreter(Cmd):
 
         # Process Stdout
         if stdout:
-            self._console.write(f"{ConsoleOutput.COLOR_O}{utils.to_unicode(stdout)}{ConsoleOutput.COLOR_N}", end='')
+            self._console.write(f"{colors.COLOR_O}{utils.to_unicode(stdout)}{colors.COLOR_N}", end='')
 
         # Process Stderr
         if stderr:
-            self._console.write(f"{ConsoleOutput.COLOR_R}{utils.to_unicode(stderr)}{ConsoleOutput.COLOR_N}", end='')
+            self._console.write(f"{colors.COLOR_R}{utils.to_unicode(stderr)}{colors.COLOR_N}", end='')
 
     # =====================================================================================
     # Command Do Functions: "spool"
