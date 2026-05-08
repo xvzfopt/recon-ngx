@@ -44,17 +44,21 @@ class BaseInterpreter(Cmd):
         :param console: The console output instance
         :type console: ConsoleOutput
         '''
-        super(BaseInterpreter, self).__init__()
+        super(BaseInterpreter, self).__init__(stdout=console)
         self._recon = recon
         self._console = console
         self._status = None
         self._script_path = None
         self._is_running_script = False
+        self._is_spooling = False
 
         self._base_prompt = "[%s]" % self._recon.get_app_name()
 
         # Set header for "help" command
         self.doc_header = 'Commands (type [help|?] <topic>):'
+
+        # Set Help Output for when no help is available for specified command
+        self.nohelp = f"{ConsoleOutput.COLOR_R}[!] No help on %s{ConsoleOutput.COLOR_N}"
 
     def start(self):
         '''
@@ -79,19 +83,30 @@ class BaseInterpreter(Cmd):
     # Cmd Override Functions
     # =====================================================================================
     def default(self, line):
-        self._console.error("Invalid command: %s" % line)
-
-    def precmd(self, line):
         '''
-        !!! CMD PROCESSOR !!!
-        Preprocess function. Performs preprocessing and modification of user input
+        Default command handler. Called as a last resort if no other functions were able to handle input
 
         :param line: The line that was entered by the end-user
         :type line: str
         '''
-        # TODO Test
+        self._console.error("Invalid command: %s" % line)
+
+    def precmd(self, line):
+        '''
+        !!! CMD PRE PROCESSOR !!!
+        Preprocess function. Performs preprocessing, modification and additional handling of user input
+
+        :param line: The line that was entered by the end-user
+        :type line: str
+        '''
+        # If spooling, write input to spool file
+        if self._console.is_spooling():
+            self._console.spool_to_file(f"{self.prompt}{line}{os.linesep}")
+
+        # If command is from script, print it
         if self._is_running_script:
-            print(f"{line}")
+            self._console.write(f"{line}")
+
         # If Recording, write to script file
         if self._script_path:
             with open(self._script_path, "a") as script_file:
@@ -289,13 +304,13 @@ class BaseInterpreter(Cmd):
                     value = input(f"{column[0]} ({column[1]}): ")
                     record[sanitize_column(column[0])] = value
                 except KeyboardInterrupt:
-                    print('')
+                    self._console.write('')
                     return
                 # TODO: Review this and adapt as needed
                 # finally:
                 #     # ensure proper output for resource scripts
                 #     if Framework._script:
-                #         print(f"{value}")
+                #         self._console.write(f"{value}")
 
         # =====================================================================================
         # Add Record to DB
@@ -335,19 +350,19 @@ class BaseInterpreter(Cmd):
                 params = input("Row ID(s) (INT): ")
                 row_ids += db.expand_rows_string(params)
             except KeyboardInterrupt:
-                print('')
+                self._console.write('')
                 return
             # TODO: Review this and adapt as needed
             # finally:
             #    # ensure proper output for resource scripts
             #    if Framework._script:
-            #        print(f"{params}")
+            #        self._console.write(f"{params}")
 
         # =====================================================================================
         # Perform Deletion
         # =====================================================================================
         count = 0
-        print(row_ids)
+        self._console.write(row_ids)
         for id in row_ids:
             count += db.delete_row(table, id)
         self._console.output("%s row(s) affected" % count)
@@ -386,13 +401,13 @@ class BaseInterpreter(Cmd):
                 row_ids = self._parse_params(params)
                 note = input("Note (TXT): ")
             except KeyboardInterrupt:
-                print('')
+                self._console.write('')
                 return
             # TODO: Review this and adapt as needed
             # finally:
             #    # ensure proper output for resource scripts
             #    if Framework._script:
-            #        print(f"{params}")
+            #        self._console.write(f"{params}")
 
         # =====================================================================================
         # Perform Note Additions/Updates
@@ -460,7 +475,7 @@ class BaseInterpreter(Cmd):
         option_name = option.upper()
         if option_name in options:
             options[option_name] = value
-            print(f"{option_name} => {value}")
+            self._console.write(f"{option_name} => {value}")
             workspace.set_config_property(option_name, options=options)
         else:
             self._console.error('Invalid option name.')
@@ -760,11 +775,66 @@ class BaseInterpreter(Cmd):
 
         # Process Stdout
         if stdout:
-            print(f"{ConsoleOutput.COLOR_O}{utils.to_unicode(stdout)}{ConsoleOutput.COLOR_N}", end='')
+            self._console.write(f"{ConsoleOutput.COLOR_O}{utils.to_unicode(stdout)}{ConsoleOutput.COLOR_N}", end='')
 
         # Process Stderr
         if stderr:
-            print(f"{ConsoleOutput.COLOR_R}{utils.to_unicode(stderr)}{ConsoleOutput.COLOR_N}", end='')
+            self._console.write(f"{ConsoleOutput.COLOR_R}{utils.to_unicode(stderr)}{ConsoleOutput.COLOR_N}", end='')
+
+    # =====================================================================================
+    # Command Do Functions: "spool"
+    # =====================================================================================
+    def do_spool(self, params):
+        '''Spools output to a file'''
+
+        # Check a file was specified
+        if not params:
+            self.help_spool()
+            return
+
+        # Check valid subcommand specified
+        arg, params = self._parse_params(params)
+        if arg in self._get_subcommands('spool'):
+            return getattr(self, '_do_spool_'+arg)(params)
+        else:
+            self.help_spool()
+
+
+    def _do_spool_start(self, params):
+        '''Starts output spooling'''
+
+        # Check if spooling is already in progress
+        if self._console.is_spooling():
+            self._console.output('Spooling has already started.')
+            return
+
+        # Check target file specified
+        filename, params = self._parse_params(params)
+        if not filename:
+            self._help_spool_start()
+            return
+
+        # Check file is writeable
+        if not utils.is_writeable(filename):
+            self._console.output(f"Cannot spool output to '{filename}'.")
+        else:
+            self._console.enable_spooling(filename)
+            self._console.output(f"Spooling output to '{filename}'.")
+
+    def _do_spool_stop(self, params):
+        '''Stops output spooling'''
+        if self._console.is_spooling():
+            self._console.output(f"Spooling stopped. Output saved to '{self._console.get_spool_file_path()}'.")
+            self._console.disable_spooling()
+        else:
+            self._console.output('Spooling is not enabled, or has already stopped.')
+
+    def _do_spool_status(self, params):
+        '''Provides the status of output spooling'''
+        status = 'stopped'
+        if self._console.is_spooling():
+            status = 'running'
+        self._console.output(f"Output spooling status: {status}.")
 
     # =====================================================================================
     # Auto-completion Functions: modules
@@ -1017,89 +1087,134 @@ class BaseInterpreter(Cmd):
     # Auto-complete script commands in same way as record: execute, stop, and status
     _complete_script_execute = _complete_script_status = _complete_script_stop = _complete_script_record
 
+    # =====================================================================================
+    # Auto-completion Functions: spool
+    # =====================================================================================
+    def complete_spool(self, text, line, *ignored):
+        '''
+        Auto-completion for spool command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('spool')
+
+        # If directly matching sub-command found, return it
+        if arg in subs:
+            return getattr(self, '_complete_spool_'+arg)(text, params)
+
+        # Else return all available matching subcommands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    def _complete_spool_start(self, text, *ignored):
+        '''
+        Auto-completion for spool command: start
+        Placeholder: currently we have nothing more to provide for this command
+
+        :param text: The script record command to auto-complete, which has been typed so far
+        :type text: str
+        :returns: Empty placeholder list
+        :rtype: list
+        '''
+        return []
+    # Auto-complete spool commands in same way as record: stop, status
+    _complete_spool_status = _complete_spool_stop = _complete_spool_start
 
     # =====================================================================================
     # Command Help Functions
     # =====================================================================================
     def help_modules(self):
-        print(getattr(self, 'do_modules').__doc__)
-        print(f"{os.linesep}Usage: modules <{'|'.join(self._get_subcommands('modules'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_modules').__doc__)
+        self._console.write(f"{os.linesep}Usage: modules <{'|'.join(self._get_subcommands('modules'))}> [...]{os.linesep}")
 
     def _help_modules_search(self):
-        print(getattr(self, '_do_modules_search').__doc__)
-        print(f"{os.linesep}Usage: modules search [<regex>]{os.linesep}")
+        self._console.write(getattr(self, '_do_modules_search').__doc__)
+        self._console.write(f"{os.linesep}Usage: modules search [<regex>]{os.linesep}")
 
     def _help_modules_load(self):
-        print(getattr(self, '_do_modules_load').__doc__)
-        print(f"{os.linesep}Usage: modules load <path>{os.linesep}")
+        self._console.write(getattr(self, '_do_modules_load').__doc__)
+        self._console.write(f"{os.linesep}Usage: modules load <path>{os.linesep}")
 
     def help_options(self):
-        print(getattr(self, 'do_options').__doc__)
-        print(f"{os.linesep}Usage: options <{'|'.join(self._get_subcommands('options'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_options').__doc__)
+        self._console.write(f"{os.linesep}Usage: options <{'|'.join(self._get_subcommands('options'))}> [...]{os.linesep}")
 
     def _help_options_set(self):
-        print(getattr(self, '_do_options_set').__doc__)
-        print(f"{os.linesep}Usage: options set <option> <value>{os.linesep}")
+        self._console.write(getattr(self, '_do_options_set').__doc__)
+        self._console.write(f"{os.linesep}Usage: options set <option> <value>{os.linesep}")
 
     def _help_options_unset(self):
-        print(getattr(self, '_do_options_unset').__doc__)
-        print(f"{os.linesep}Usage: options unset <option>{os.linesep}")
+        self._console.write(getattr(self, '_do_options_unset').__doc__)
+        self._console.write(f"{os.linesep}Usage: options unset <option>{os.linesep}")
 
     def help_db(self):
-        print(getattr(self, 'do_db').__doc__)
-        print(f"{os.linesep}Usage: db <{'|'.join(self._get_subcommands('db'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_db').__doc__)
+        self._console.write(f"{os.linesep}Usage: db <{'|'.join(self._get_subcommands('db'))}> [...]{os.linesep}")
 
     def _help_db_query(self):
-        print(getattr(self, '_do_db_query').__doc__)
-        print(f"{os.linesep}Usage: db query <sql>{os.linesep}")
+        self._console.write(getattr(self, '_do_db_query').__doc__)
+        self._console.write(f"{os.linesep}Usage: db query <sql>{os.linesep}")
 
     def _help_db_insert(self):
-        print(getattr(self, '_do_db_insert').__doc__)
-        print(f"{os.linesep}Usage: db insert <table> [<values>]{os.linesep}")
-        print(f"values => '~' delimited string representing column values (exclude rowid, module){os.linesep}")
+        self._console.write(getattr(self, '_do_db_insert').__doc__)
+        self._console.write(f"{os.linesep}Usage: db insert <table> [<values>]{os.linesep}")
+        self._console.write(f"values => '~' delimited string representing column values (exclude rowid, module){os.linesep}")
 
     def _help_db_delete(self):
-        print(getattr(self, '_do_db_delete').__doc__)
-        print(f"{os.linesep}Usage: db delete <table> [<rowid(s)>]{os.linesep}")
-        print(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
+        self._console.write(getattr(self, '_do_db_delete').__doc__)
+        self._console.write(f"{os.linesep}Usage: db delete <table> [<rowid(s)>]{os.linesep}")
+        self._console.write(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
 
     def _help_db_notes(self):
-        print(getattr(self, '_do_db_notes').__doc__)
-        print(f"{os.linesep}Usage: db note <table> [<rowid(s)> <note>]{os.linesep}")
-        print(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
+        self._console.write(getattr(self, '_do_db_notes').__doc__)
+        self._console.write(f"{os.linesep}Usage: db note <table> [<rowid(s)> <note>]{os.linesep}")
+        self._console.write(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
 
     def help_show(self):
         options = sorted(self._get_db_table_names())
-        print(getattr(self, 'do_show').__doc__)
-        print(f"{os.linesep}Usage: show <{'|'.join(options)}>{os.linesep}")
+        self._console.write(getattr(self, 'do_show').__doc__)
+        self._console.write(f"{os.linesep}Usage: show <{'|'.join(options)}>{os.linesep}")
 
     def help_keys(self):
-        print(getattr(self, 'do_keys').__doc__)
-        print(f"{os.linesep}Usage: keys <{'|'.join(self._get_subcommands('keys'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_keys').__doc__)
+        self._console.write(f"{os.linesep}Usage: keys <{'|'.join(self._get_subcommands('keys'))}> [...]{os.linesep}")
 
     def _help_keys_add(self):
-        print(getattr(self, '_do_keys_add').__doc__)
-        print(f"{os.linesep}Usage: keys add <name> <value>{os.linesep}")
+        self._console.write(getattr(self, '_do_keys_add').__doc__)
+        self._console.write(f"{os.linesep}Usage: keys add <name> <value>{os.linesep}")
 
     def _help_keys_remove(self):
-        print(getattr(self, '_do_keys_remove').__doc__)
-        print(f"{os.linesep}Usage: keys remove <name>{os.linesep}")
+        self._console.write(getattr(self, '_do_keys_remove').__doc__)
+        self._console.write(f"{os.linesep}Usage: keys remove <name>{os.linesep}")
 
     def help_script(self):
-        print(getattr(self, 'do_script').__doc__)
-        print(f"{os.linesep}Usage: script <{'|'.join(self._get_subcommands('script'))}> [...]{os.linesep}")
+        self._console.write(getattr(self, 'do_script').__doc__)
+        self._console.write(f"{os.linesep}Usage: script <{'|'.join(self._get_subcommands('script'))}> [...]{os.linesep}")
 
     def _help_script_record(self):
-        print(getattr(self, '_do_script_record').__doc__)
-        print(f"{os.linesep}Usage: script record <filename>{os.linesep}")
+        self._console.write(getattr(self, '_do_script_record').__doc__)
+        self._console.write(f"{os.linesep}Usage: script record <filename>{os.linesep}")
 
     def _help_script_execute(self):
-        print(getattr(self, '_do_script_execute').__doc__)
-        print(f"{os.linesep}Usage: script execute <filename>{os.linesep}")
+        self._console.write(getattr(self, '_do_script_execute').__doc__)
+        self._console.write(f"{os.linesep}Usage: script execute <filename>{os.linesep}")
 
     def help_shell(self):
-        print(getattr(self, 'do_shell').__doc__)
-        print(f"{os.linesep}Usage: [shell|!] <command>{os.linesep}")
+        self._console.write(getattr(self, 'do_shell').__doc__)
+        self._console.write(f"{os.linesep}Usage: [shell|!] <command>{os.linesep}")
+
+    def help_spool(self):
+        self._console.write(getattr(self, 'do_spool').__doc__)
+        self._console.write(f"{os.linesep}Usage: spool <{'|'.join(self._get_subcommands('spool'))}> [...]{os.linesep}")
+
+    def _help_spool_start(self):
+        self._console.write(getattr(self, '_do_spool_start').__doc__)
+        self._console.write(f"{os.linesep}Usage: spool start <filename>{os.linesep}")
 
     # =====================================================================================
     # Getters
@@ -1148,11 +1263,11 @@ class BaseInterpreter(Cmd):
                     last_category = category
                     self._console.heading(last_category)
                 # print module
-                print(f"{self.SPACER * 2}{module}")
+                self._console.write(f"{self.SPACER * 2}{module}")
         else:
-            print('')
+            self._console.write('')
             self._console.alert('No modules enabled/installed.')
-        print('')
+        self._console.write('')
 
 
     def _list_options(self, options=None):
@@ -1176,19 +1291,19 @@ class BaseInterpreter(Cmd):
             if key_len < 4: key_len = 4
             val_len = len(max([utils.to_unicode_str(options[x]) for x in options], key=len))
             if val_len < 13: val_len = 13
-            print('')
-            print(pattern % ('Name'.ljust(key_len), 'Current Value'.ljust(val_len), 'Required', 'Description'))
-            print(pattern % (self.RULER*key_len, (self.RULER*13).ljust(val_len), self.RULER*8, self.RULER*11))
+            self._console.write('')
+            self._console.write(pattern % ('Name'.ljust(key_len), 'Current Value'.ljust(val_len), 'Required', 'Description'))
+            self._console.write(pattern % (self.RULER*key_len, (self.RULER*13).ljust(val_len), self.RULER*8, self.RULER*11))
             for key in sorted(options):
                 value = options[key] if options[key] != None else ''
                 reqd = 'no' if options.required[key] is False else 'yes'
                 desc = options.description[key]
-                print(pattern % (key.ljust(key_len), utils.to_unicode_str(value).ljust(val_len), utils.to_unicode_str(reqd).ljust(8), desc))
-            print('')
+                self._console.write(pattern % (key.ljust(key_len), utils.to_unicode_str(value).ljust(val_len), utils.to_unicode_str(reqd).ljust(8), desc))
+            self._console.write('')
         else:
-            print('')
-            print(f"{self.SPACER}No options available for this module.")
-            print('')
+            self._console.write('')
+            self._console.write(f"{self.SPACER}No options available for this module.")
+            self._console.write('')
 
 
     def _parse_params(self, params):
