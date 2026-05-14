@@ -257,14 +257,16 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     def do_run(self, params):
         '''Runs the loaded module'''
+        inputs = []
 
         # Process Inputs
-        inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
-        self._module._validate_inputs(inputs)
+        if hasattr(self._module, '_default_source'):
+            inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
+            self._module._validate_inputs(inputs)
 
         # Run the Module!
         try:
-            self._recon.validate_options()
+            self._recon.validate_options(self._module.get_options())
             if self._module.preflight():
                 self._module.run(inputs)
         # Handler: Keyboard Interrupts from user

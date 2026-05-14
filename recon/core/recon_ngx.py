@@ -37,7 +37,7 @@ class ReconNGXApp:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible) :
+    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible, modules_path) :
         '''
         Recon-NGX Core App Consructor
 
@@ -51,6 +51,8 @@ class ReconNGXApp:
         :type check_version: bool
         :param marketplace_enabled: Whether the marketplace is enabled
         :type marketplace_enabled: bool
+        :param modules_path: A modules path override to load modules from a custom directory
+        :type modules_path: str
         '''
         super(ReconNGXApp, self).__init__()
 
@@ -82,6 +84,13 @@ class ReconNGXApp:
         self._data_path         = os.path.join(self._home_path, "data")
         self._workspaces_path   = os.path.join(self._home_path, "workspaces")
 
+        # Check for Modules Path override
+        if modules_path:
+            if not os.path.isdir(modules_path):
+                self._console.error("Invalid modules path specified: '%s'. Check that this is a valid directory" % modules_path)
+                sys.exit(1)
+            self._modules_path = modules_path
+
         # Validate Parameters
         if verbosity not in [0, 1, 2]:
             self._console.error("Invalid verbosity level: '%s'. Must be 0, 1, or 2." % verbosity)
@@ -92,7 +101,7 @@ class ReconNGXApp:
         self._init_home_dir()
 
         # Initialise Module Manager
-        self._module_manager = ModuleManager(self._home_path, self._console, self)
+        self._module_manager = ModuleManager(self._home_path, self._modules_path, self._console, self)
         if self.is_marketplace_enabled():
             self._module_manager.fetch_marketplace_index()
 
@@ -138,21 +147,32 @@ class ReconNGXApp:
             # Module Interpreter reloaded
             if self._m_interpreter.get_status() == ModuleInterpreter.STATUS_RELOADED:
                 self._console.output("Reloading module...")
+
+                # Create new instance of loaded module
                 module = self._m_interpreter.get_module()
-                is_loaded = self._module_manager.reload_module(module)
+                is_loaded, new_module = self._module_manager.reload_module(module)
 
                 # Module reloaded successfully: don't exit back to framework
                 if is_loaded:
-                    self._m_interpreter.reload()
+                    self._m_interpreter.reload(new_module)
                     continue
             break
 
-    def validate_options(self):
+    def validate_options(self, module_options=None):
         '''
         Validates the Global Recon-NGX options. Throws a ValidationException if validation fails.
 
+        :param module_options: Module options to validate (optional)
+        :type module_options: Options, optional
         :raises: ValidationException
         '''
+        # Validate Module Options if set
+        if module_options:
+            for option_name in module_options:
+                if not self.is_option_set(option_name, module_options) and self.is_option_required(option_name, module_options):
+                    raise ValidationException("Value required for the '%s' option." % option_name)
+
+        # Validate Global options
         for option_name in self.get_options():
             if not self.is_option_set(option_name) and self.is_option_required(option_name):
                 raise ValidationException("Value required for the '%s' option." % option_name)
@@ -284,18 +304,24 @@ class ReconNGXApp:
         '''
         return self.get_options()[option_name]
 
-    def is_option_set(self, option_name):
+    def is_option_set(self, option_name, options=None):
         '''
         Checks if the specified option is currently set
 
         :param option_name: The name of the option to check
         :type option_name: str
+        :param options: Optional Options instance override. Defaults to Global Options if not set
+        :type options: Options
         :returns: True if the option is currently set, otherwise False
         :rtype: bool
         '''
+        # If no options override, use global options
+        if not options:
+            options = self.get_options()
+
         is_set = False
-        if option_name in self.get_options():
-            value = self.get_options()[option_name]
+        if option_name in options:
+            value = options[option_name]
 
             # If option is bool or int, then it's implicitly set
             if type(value) in [bool, int]:
@@ -306,16 +332,21 @@ class ReconNGXApp:
                     is_set = True
         return is_set
 
-    def is_option_required(self, option_name):
+    def is_option_required(self, option_name, options=None):
         '''
         Checks is the specified option is required
 
         :param option_name: The name of the option to check
         :type option_name: str
+        :param options: Optional Options instance override. Defaults to Global Options if not set
+        :type options: Options
         :returns: True if the option is required, otherwise False
         :rtype: bool
         '''
-        return self.get_options().required[option_name]
+        # If no options override, use global options
+        if not options:
+            options = self.get_options()
+        return options.required[option_name]
 
 
     def is_marketplace_enabled(self):
@@ -344,6 +375,15 @@ class ReconNGXApp:
         :type: str
         '''
         return self._home_path
+
+    def get_data_path(self):
+        '''
+        Gets the Recon-NGX data path
+
+        :returns: The absolute path to the Recon-NGX data directory
+        :rtype: str
+        '''
+        return self._data_path
 
     # =====================================================================================
     # Setters

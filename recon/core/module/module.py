@@ -12,6 +12,7 @@ import requests
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
+from recon.core.exceptions import ValidationException
 from recon.core.options import Options
 from recon.utils import validators, utils
 
@@ -27,6 +28,7 @@ class BaseModule:
     # Properties
     # =====================================================================================
     meta = {}
+    data_path = ""
     workspace = ""
 
     # =====================================================================================
@@ -714,6 +716,28 @@ class BaseModule:
         Gets the Module's Fully Qualified Name, e.g. reporting/test/module1
         '''
         return self._fqn
+
+    def get_options(self):
+        '''
+        Gets the module's options
+        '''
+        return self._options
+
+    def get_option_value(self, option_name):
+        '''
+        Gets the value of the specified option
+
+        :param option_name: The name of the target option
+        :type option_name: str
+        '''
+        return self.get_options().get(option_name)
+
+    def get_data_path(self):
+        '''
+        Gets the path to the Recon NGX data folder
+
+        '''
+        return self._recon.get_data_path()
 
     def _get_db(self):
         '''
