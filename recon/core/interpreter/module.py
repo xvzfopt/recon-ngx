@@ -1,6 +1,7 @@
 # =====================================================================================
 # Imports: External
 # =====================================================================================
+import copy
 import os
 import textwrap
 import sqlite3
@@ -55,6 +56,17 @@ class ModuleInterpreter(BaseInterpreter):
         :note: Overrides base start to avoid banner print
         '''
         self.cmdloop()
+
+    def reload(self, new_module=None):
+        '''
+        Reloads the Module interpreter with a new module instance
+
+        :param new_module: The new module instance
+        :type new_module: BaseModule, optional
+        '''
+
+        self._module = new_module
+        super(ModuleInterpreter, self).reload()
 
     # =====================================================================================
     # Command Do Functions: "info"
