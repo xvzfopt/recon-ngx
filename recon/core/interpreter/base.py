@@ -7,6 +7,7 @@ import sqlite3
 import sys
 from cmd import Cmd
 
+from recon.core.output.colors import COLOR_N
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
@@ -49,8 +50,6 @@ class BaseInterpreter(Cmd):
         self._recon = recon
         self._console = console
         self._status = None
-        self._script_path = None
-        self._is_running_script = False
         self._is_spooling = False
 
         self._base_prompt = f"[{colors.COLOR_RNGX_BOLD}{self._recon.get_app_name()}{colors.COLOR_N}]"
@@ -105,12 +104,13 @@ class BaseInterpreter(Cmd):
             self._console.spool_to_file(f"{self.prompt}{line}{os.linesep}")
 
         # If command is from script, print it
-        if self._is_running_script:
-            self._console.write(f"{line}")
+        if self._recon.is_running_script():
+            if line != "EOF":
+                self._console.write(f"{line}")
 
         # If Recording, write to script file
-        if self._script_path:
-            with open(self._script_path, "a") as script_file:
+        if self._recon.is_recording():
+            with open(self._recon.get_script_path(), "a") as script_file:
                 script_file.write(f"{line}{os.linesep}")
 
         return line
@@ -133,7 +133,7 @@ class BaseInterpreter(Cmd):
         # Input: Handle EOF when execution script files: Reset stdin
         if line == 'EOF':
             sys.stdin = sys.__stdin__
-            self._is_running_script = False
+            self._recon.finish_script_execution()
             return
 
         # Find target function
@@ -700,7 +700,7 @@ class BaseInterpreter(Cmd):
         '''Records commands in a script file'''
 
         # Check recording is not already underway
-        if not self._script_path:
+        if not self._recon.is_recording():
 
             # Parse output filename
             path, params = self._parse_params(params)
@@ -715,8 +715,7 @@ class BaseInterpreter(Cmd):
             if not utils.is_writeable(path):
                 self._console.output(f"Cannot record commands to '{path}'. File is not writeable.")
             else:
-                self._script_path = path
-                open(path, 'w').close()
+                self._recon.start_recording(path)
                 self._console.output(f"Recording commands to '{path}'.")
         else:
             self._console.output('Recording is already underway.')
@@ -725,15 +724,15 @@ class BaseInterpreter(Cmd):
         '''Stops command recording'''
 
         # Check recording is enabled
-        if self._script_path:
-            self._console.output(f"Recording stopped. Commands saved to '{self._script_path}'.")
-            self._script_path = None
+        if self._recon.is_recording():
+            self._console.output(f"Recording stopped. Commands saved to '{self._recon.get_script_path()}'.")
+            self._recon.stop_recording()
         else:
             self._console.output('Recording is not enabled, or has already been stopped.')
 
     def _do_script_status(self, params):
         '''Provides the status of command recording'''
-        if self._script_path:
+        if self._recon.is_recording():
             status = 'started'
         else:
             status = "stopped"
@@ -747,17 +746,19 @@ class BaseInterpreter(Cmd):
             self._help_script_execute()
             return
 
-        # Expand Path
-        path = os.path.expanduser(params)
+        self._recon.execute_script(params)
 
-        # Load script into stdin
-        if os.path.exists(path):
-            # works even when called before Recon.start due
-            # to stdin waiting for the interactive prompt
-            sys.stdin = open(params)
-            self._is_running_script = True
-        else:
-            self._console.error(f"Script file '{path}' not found.")
+        # # Expand Path
+        # path = os.path.expanduser(params)
+        #
+        # # Load script into stdin
+        # if os.path.exists(path):
+        #     # works even when called before Recon.start due
+        #     # to stdin waiting for the interactive prompt
+        #     sys.stdin = open(params)
+        #     self._is_running_script = True
+        # else:
+        #     self._console.error(f"Script file '{path}' not found.")
 
     # =====================================================================================
     # Command Do Functions: "shell"
