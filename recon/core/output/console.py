@@ -217,6 +217,16 @@ class ConsoleOutput:
         self.write(f"{colors.COLOR_B}[*]{colors.COLOR_N} {line}")
         pass
 
+    def code_line(self, line):
+        '''
+        Formats and prints normal output
+
+        :param line: The message/data to print
+        :type line: str
+        '''
+        self.write(f"{colors.COLOR_R}[>]{colors.COLOR_N} {line}")
+        pass
+
     def alert(self, line):
         '''
         Formats and prints important output
