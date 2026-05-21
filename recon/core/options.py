@@ -52,6 +52,20 @@ class Options(dict):
         '''
         self.init_option(name=name, value=value, required=required, description=description)
 
+    def register_module_option(self, option):
+        '''
+        Registers a ModuleOption
+
+        :param option: The ModuleOption instance to register
+        :type option: ModuleOption
+        '''
+        self.init_option(
+            name=option.name,
+            value=option.default,
+            required=option.name,
+            description=option.description
+        )
+
     def __getitem__(self, name):
         name = self.__keytransform__(name)
         return super(Options, self).__getitem__(name)

@@ -126,7 +126,7 @@ class ModuleManager:
             elif module['path'] in self._loaded_modules.keys():
                 status = self.MODULE_STATUS_INSTALLED
                 loaded = self._loaded_modules[module['path']]
-                if loaded.meta['version'] != module['version']:
+                if loaded.meta.version != module['version']:
                     status = self.MODULE_STATUS_OUTDATED
             module['status'] = status
 
@@ -185,7 +185,7 @@ class ModuleManager:
         :rtype: bool, BaseModule
         '''
         saved_options = None
-        modules_dir_name = os.path.split(self._modules_path)[1]
+        modules_dir_name = os.path.split(self._modules_path.rstrip("/"))[1]
 
         # Build Module information
         mod_info = {}
@@ -562,15 +562,15 @@ class ModuleManager:
             module_data["last_updated"]     = datetime.strftime(datetime.now(), "%Y-%m-%d")
 
             # Meta data
-            module_data["author"]           = module.meta.get("author")
-            module_data["name"]             = module.meta.get("name")
-            module_data["description"]      = module.meta.get("description")
-            module_data["version"]          = module.meta.get("version", "1.0")
+            module_data["author"]           = module.meta.author
+            module_data["name"]             = module.meta.name
+            module_data["description"]      = module.meta.description
+            module_data["version"]          = module.meta.version
 
             # Optional Data
-            module_data["dependencies"]     = module.meta.get("dependencies", [])
-            module_data["files"]            = module.meta.get("files", [])
-            module_data["required_keys"]    = module.meta.get("required_keys", [])
+            module_data["dependencies"]     = module.meta.dependencies
+            module_data["files"]            = module.meta.files
+            module_data["required_keys"]    = module.meta.required_keys
 
             index.append(module_data)
 

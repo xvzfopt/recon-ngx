@@ -77,11 +77,11 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Print Basic Module information
         for item in ['name', 'author', 'version']:
-            self._console.write(f"{item.title().rjust(10)}: {self._module.meta[item]}")
+            self._console.write(f"{item.title().rjust(10)}: {getattr(self._module.meta, item)}")
 
         # Print any required Keys
-        if self._module.meta.get('required_keys'):
-            self._console.write(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.get('required_keys'))}")
+        if self._module.meta.required_keys:
+            self._console.write(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.required_keys)}")
         self._console.write('')
 
         # Print Path/Fully Qualified Name
@@ -91,7 +91,7 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Print Module Description
         self._console.write('Description:')
-        self._console.write(f"{self.SPACER}{textwrap.fill(self._module.meta['description'], 100, subsequent_indent=self.SPACER)}")
+        self._console.write(f"{self.SPACER}{textwrap.fill(self._module.meta.description, 100, subsequent_indent=self.SPACER)}")
         self._console.write('')
 
         # Print Module Option information
@@ -108,9 +108,9 @@ class ModuleInterpreter(BaseInterpreter):
             self._console.write('')
 
         # Print Module Comments
-        if self._module.meta.get('comments'):
+        if self._module.meta.comments:
             self._console.write('Comments:')
-            for comment in self._module.meta['comments']:
+            for comment in self._module.meta.comments:
                 prefix = '* '
                 if comment.startswith('\t'):
                     prefix = self.SPACER+'- '

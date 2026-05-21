@@ -14,6 +14,7 @@ import requests
 # =====================================================================================
 from recon.core.exceptions import ValidationException
 from recon.core.options import Options
+from recon.sdk import ModuleMetadata
 from recon.utils import validators, utils
 
 # =====================================================================================
@@ -27,7 +28,7 @@ class BaseModule:
     # =====================================================================================
     # Properties
     # =====================================================================================
-    meta = {}
+    meta = None
     data_path = ""
     workspace = ""
 
@@ -60,21 +61,21 @@ class BaseModule:
         # =====================================================================================
         # Set query for SOURCE inputs
         # =====================================================================================
-        if self.meta.get('query'):
-            self._default_source = self.meta.get('query')
+        if self.meta.query:
+            self._default_source = self.meta.query
             self._options.register_option('source', 'default', True, 'source of input (see \'info\' for details)')
 
         # =====================================================================================
         # Register Module Options
         # =====================================================================================
-        if self.meta.get('options'):
-            for option in self.meta.get('options'):
-                self._options.register_option(*option)
+        if self.meta.options:
+            for option in self.meta.options:
+                self._options.register_module_option(option)
 
         # =====================================================================================
         # Register any required keys
         # =====================================================================================
-        for key in self.meta.get('required_keys', []):
+        for key in self.meta.required_keys:
             # Add key to the database
             if not self._key_manager.has_key(key):
                 self._key_manager.add_key(key, "")
@@ -95,7 +96,7 @@ class BaseModule:
         '''
 
         # Check Keys
-        for key in self.meta.get('required_keys', []):
+        for key in self.meta.required_keys:
             # Fetch any key updates
             self.keys[key] = self._key_manager.get_key_value(key)
 
@@ -781,7 +782,7 @@ class BaseModule:
         validator = None
 
         # Get Module validation type
-        validator_type = self.meta.get('validator')
+        validator_type = self.meta.validator
         if not validator_type:
             # Passthru, no validator required
             self._console.debug('No validator required.')
