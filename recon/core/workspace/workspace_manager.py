@@ -49,14 +49,16 @@ class WorkspaceManager:
         '''
 
         # Set up Directories
-        wpath = os.path.join(self._spaces_path, name)
-        os.makedirs(wpath)
+        workspace_path = os.path.join(self._spaces_path, name)
+        downloads_path = os.path.join(workspace_path, "downloads")
+        os.makedirs(workspace_path)
+        os.makedirs(downloads_path)
 
         # Initialise Database
-        db = WorkspaceDB(os.path.join(wpath, "data.db"), self._output, self._name)
+        db = WorkspaceDB(os.path.join(workspace_path, "data.db"), self._output, self._name)
 
         # Initialise Workspace
-        workspace = Workspace(name, wpath, db)
+        workspace = Workspace(name, workspace_path, db)
 
         return workspace
 
