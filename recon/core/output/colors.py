@@ -1,10 +1,11 @@
 # =====================================================================================
 # Console Output Colors
 # =====================================================================================
-COLOR_N = '\033[m'  # native
-COLOR_R = '\033[31m'  # red
-COLOR_G = '\033[32m'  # green
-COLOR_O = '\033[33m'  # orange
-COLOR_B = '\033[34m'  # blue
-COLOR_RNGX_BOLD = '\033[1;38;2;100;218;222;49m' # Recon-NGX Branding Color
+COLOR_N             = '\033[m'  # native
+COLOR_R             = '\033[31m'  # red
+COLOR_G             = '\033[32m'  # green
+COLOR_G_BOLD        = '\033[1;32m'  # green
+COLOR_O             = '\033[33m'  # orange
+COLOR_B             = '\033[34m'  # blue
+COLOR_RNGX_BOLD     = '\033[1;38;2;100;218;222;49m' # Recon-NGX Branding Color
 

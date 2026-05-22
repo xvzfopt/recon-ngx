@@ -234,7 +234,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        self.write(f"{colors.COLOR_G}[*]{colors.COLOR_N} {line}")
+        self.write(f"{colors.COLOR_G_BOLD}[*]{colors.COLOR_N} {line}")
 
     def verbose(self, line):
         '''
