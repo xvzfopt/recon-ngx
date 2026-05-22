@@ -37,7 +37,7 @@ class ReconNGXApp:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible) :
+    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible, modules_path) :
         '''
         Recon-NGX Core App Consructor
 
@@ -51,6 +51,8 @@ class ReconNGXApp:
         :type check_version: bool
         :param marketplace_enabled: Whether the marketplace is enabled
         :type marketplace_enabled: bool
+        :param modules_path: A modules path override to load modules from a custom directory
+        :type modules_path: str
         '''
         super(ReconNGXApp, self).__init__()
 
@@ -62,6 +64,8 @@ class ReconNGXApp:
         self._workspace = None
         self._marketplace_enabled = marketplace_enabled
         self._base_prompt = "[%s]" % self._name
+        self._script_path = None
+        self._is_running_script = False
 
         # Initialise Global Options
         self._options = Options()
@@ -82,6 +86,13 @@ class ReconNGXApp:
         self._data_path         = os.path.join(self._home_path, "data")
         self._workspaces_path   = os.path.join(self._home_path, "workspaces")
 
+        # Check for Modules Path override
+        if modules_path:
+            if not os.path.isdir(modules_path):
+                self._console.error("Invalid modules path specified: '%s'. Check that this is a valid directory" % modules_path)
+                sys.exit(1)
+            self._modules_path = modules_path
+
         # Validate Parameters
         if verbosity not in [0, 1, 2]:
             self._console.error("Invalid verbosity level: '%s'. Must be 0, 1, or 2." % verbosity)
@@ -92,7 +103,7 @@ class ReconNGXApp:
         self._init_home_dir()
 
         # Initialise Module Manager
-        self._module_manager = ModuleManager(self._home_path, self._console, self)
+        self._module_manager = ModuleManager(self._home_path, self._modules_path, self._console, self)
         if self.is_marketplace_enabled():
             self._module_manager.fetch_marketplace_index()
 
@@ -138,21 +149,32 @@ class ReconNGXApp:
             # Module Interpreter reloaded
             if self._m_interpreter.get_status() == ModuleInterpreter.STATUS_RELOADED:
                 self._console.output("Reloading module...")
+
+                # Create new instance of loaded module
                 module = self._m_interpreter.get_module()
-                is_loaded = self._module_manager.reload_module(module)
+                is_loaded, new_module = self._module_manager.reload_module(module)
 
                 # Module reloaded successfully: don't exit back to framework
                 if is_loaded:
-                    self._m_interpreter.reload()
+                    self._m_interpreter.reload(new_module)
                     continue
             break
 
-    def validate_options(self):
+    def validate_options(self, module_options=None):
         '''
         Validates the Global Recon-NGX options. Throws a ValidationException if validation fails.
 
+        :param module_options: Module options to validate (optional)
+        :type module_options: Options, optional
         :raises: ValidationException
         '''
+        # Validate Module Options if set
+        if module_options:
+            for option_name in module_options:
+                if not self.is_option_set(option_name, module_options) and self.is_option_required(option_name, module_options):
+                    raise ValidationException("Value required for the '%s' option." % option_name)
+
+        # Validate Global options
         for option_name in self.get_options():
             if not self.is_option_set(option_name) and self.is_option_required(option_name):
                 raise ValidationException("Value required for the '%s' option." % option_name)
@@ -164,7 +186,44 @@ class ReconNGXApp:
         :param path: The path of the script to be executed
         :type path: str
         '''
-        self._f_interpreter._do_script_execute(path)
+        # Expand Path
+        path = os.path.expanduser(path)
+
+        # Load script into stdin
+        if os.path.exists(path):
+            # works even when called before Recon.start due
+            # to stdin waiting for the interactive prompt
+            self._console.code_line("Script Execution Started --> %s" % path)
+            sys.stdin = open(path)
+            self._is_running_script = True
+        else:
+            self._console.error(f"Script file '{path}' not found.")
+
+    def record_script_line(self, line):
+        '''
+        Records a line to the current script file
+
+        :param line: The line to record
+        :type line: str
+        '''
+        with open(self._script_path, "a") as script_file:
+            script_file.write(f"{line}{os.linesep}")
+
+    def stop_recording(self):
+        '''
+        Stops Recording lines to current script file
+        '''
+        self._script_path = None
+
+    def start_recording(self, path):
+        '''
+        Starts recording lines to the target script file
+
+        :param path: The target script file path
+        :type path: str
+        '''
+        open(path, 'w').close()
+        self._script_path = path
 
     # =====================================================================================
     # Getters
@@ -284,18 +343,24 @@ class ReconNGXApp:
         '''
         return self.get_options()[option_name]
 
-    def is_option_set(self, option_name):
+    def is_option_set(self, option_name, options=None):
         '''
         Checks if the specified option is currently set
 
         :param option_name: The name of the option to check
         :type option_name: str
+        :param options: Optional Options instance override. Defaults to Global Options if not set
+        :type options: Options
         :returns: True if the option is currently set, otherwise False
         :rtype: bool
         '''
+        # If no options override, use global options
+        if not options:
+            options = self.get_options()
+
         is_set = False
-        if option_name in self.get_options():
-            value = self.get_options()[option_name]
+        if option_name in options:
+            value = options[option_name]
 
             # If option is bool or int, then it's implicitly set
             if type(value) in [bool, int]:
@@ -306,16 +371,21 @@ class ReconNGXApp:
                     is_set = True
         return is_set
 
-    def is_option_required(self, option_name):
+    def is_option_required(self, option_name, options=None):
         '''
         Checks is the specified option is required
 
         :param option_name: The name of the option to check
         :type option_name: str
+        :param options: Optional Options instance override. Defaults to Global Options if not set
+        :type options: Options
         :returns: True if the option is required, otherwise False
         :rtype: bool
         '''
-        return self.get_options().required[option_name]
+        # If no options override, use global options
+        if not options:
+            options = self.get_options()
+        return options.required[option_name]
 
 
     def is_marketplace_enabled(self):
@@ -344,6 +414,42 @@ class ReconNGXApp:
         :type: str
         '''
         return self._home_path
+
+    def get_data_path(self):
+        '''
+        Gets the Recon-NGX data path
+
+        :returns: The absolute path to the Recon-NGX data directory
+        :rtype: str
+        '''
+        return self._data_path
+
+    def get_script_path(self):
+        '''
+        Gets the path file that the interpreter is currently recording a script to
+
+        :returns: Recording script path
+        :rtype: str
+        '''
+        return self._script_path
+
+    def is_recording(self):
+        '''
+        Checks if a script is currently being recorded
+
+        :returns: True if a script is currently being recorded, otherwise False
+        :rtype: bool
+        '''
+        return self._script_path is not None
+
+    def is_running_script(self):
+        '''
+        Checks if a script is currently being executed
+
+        :returns: True if a script is currently being executed, otherwise False
+        :rtype: bool
+        '''
+        return self._is_running_script
 
     # =====================================================================================
     # Setters
@@ -376,6 +482,14 @@ class ReconNGXApp:
         # Reload Modules
         self._module_manager.load_modules()
         return True
+
+    def finish_script_execution(self):
+        '''
+        Finishes the execution of a script and performs any post-execution cleanup
+        '''
+        self._is_running_script = False
+        self._console.write("")
+        self._console.code_line("Script Execution Finished")
 
     # =====================================================================================
     # Internal Functions

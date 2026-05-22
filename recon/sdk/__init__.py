@@ -1,4 +1,6 @@
 # =====================================================================================
-# Expose Modules
+# Expose SDK Modules
 # =====================================================================================
-from .module_manager import ModuleManager
+from .meta import ModuleMetadata
+from .meta import ModuleOption
+from .module import BaseModule

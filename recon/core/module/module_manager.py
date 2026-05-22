@@ -8,13 +8,12 @@ import os
 import yaml
 import re
 import sys
-import importlib
 import json
+import importlib
+import importlib.util
+from copy import deepcopy
 from datetime import datetime
-
 from requests.exceptions import HTTPError
-from importlib.machinery import SourceFileLoader
-from contextlib import contextmanager
 
 # =====================================================================================
 # Imports: Internal
@@ -42,12 +41,14 @@ class ModuleManager:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, home_path, console, framework):
+    def __init__(self, home_path, modules_path, console, framework):
         '''
         Constructor
 
         :param home_path: Path to the recon-ngx home directory
         :type home_path: str
+        :param modules_path: Path to the modules directory
+        :type modules_path: str
         :param console: Console Output Instance
         :type console: ConsoleOutput
         '''
@@ -59,7 +60,7 @@ class ModuleManager:
 
         # Build Paths
         self._home_path = home_path
-        self._modules_path = os.path.join(self._home_path, 'modules')
+        self._modules_path = modules_path
         self._data_path = os.path.join(self._home_path, 'data')
 
         # Initialise Local Modules Index
@@ -125,7 +126,7 @@ class ModuleManager:
             elif module['path'] in self._loaded_modules.keys():
                 status = self.MODULE_STATUS_INSTALLED
                 loaded = self._loaded_modules[module['path']]
-                if loaded.meta['version'] != module['version']:
+                if loaded.meta.version != module['version']:
                     status = self.MODULE_STATUS_OUTDATED
             module['status'] = status
 
@@ -143,7 +144,7 @@ class ModuleManager:
         '''
         dirpath = os.path.dirname(os.path.join(self._modules_path, module.get_fqn()))
         filename = module.get_name() + ".py"
-        return self._load_file_module(dirpath, filename)
+        return self._load_file_module(dirpath, filename, True)
 
     def load_modules(self):
         '''
@@ -170,7 +171,7 @@ class ModuleManager:
         # Refresh Modules Index
         self._build_local_index()
 
-    def _load_file_module(self, dirpath, filename):
+    def _load_file_module(self, dirpath, filename, reload=False):
         '''
         Loads a specific module
 
@@ -178,41 +179,74 @@ class ModuleManager:
         :type dirpath: str
         :param filename: The filename of the module
         :type filename: str
-        :returns: Whether the module was imported successfully
-        :rtype: bool
+        :param reload: Whether the module is being reloaded. Defaults to False
+        :type reload: bool
+        :returns: Whether the module was imported successfully, the loaded module instance
+        :rtype: bool, BaseModule
         '''
+        saved_options = None
+        modules_dir_name = os.path.split(self._modules_path.rstrip("/"))[1]
 
         # Build Module information
         mod_info = {}
         mod_info["name"] = filename.split('.')[0]
-        mod_info["category"] = re.search('/modules/([^/]*)', dirpath).group(1)
-        mod_info["dispname"] = '/'.join(re.split('/modules/', dirpath)[-1].split('/') + [mod_info["name"]])
-        mod_info["loadname"] = mod_info["dispname"].replace('/', '_')
+        mod_info["category"] = re.search('.*?/%s/([^/]*)' % modules_dir_name, dirpath).group(1)
+        mod_info["fqn"] = '/'.join(re.split('.*?/%s/' % modules_dir_name, dirpath)[-1].split('/') + [mod_info["name"]])
+        mod_info["loadname"] = mod_info["fqn"].replace('/', '_')
         mod_info["loadpath"] = os.path.join(dirpath, filename)
         mod_file = open(mod_info["loadpath"])
         self._console.debug("Processing file module ---> %s" % json.dumps(mod_info, indent=2))
 
         # =====================================================================================
+        # Handle Module Reload
+        # =====================================================================================
+        if reload and mod_info["loadname"] in sys.modules:
+            self._console.debug("Module is being reloaded...")
+
+            # Save options so they can be restored
+            current_module = self.get_module_instance(mod_info["fqn"])
+            saved_options = deepcopy(current_module.get_options())
+
+            # Clean current imports & instances
+            importlib.invalidate_caches()
+            sys.modules.pop(mod_info["loadname"])
+            del self._loaded_modules[mod_info["fqn"]]
+
+        # =====================================================================================
         # Attempt Module Import
         # =====================================================================================
         try:
-            # Import the module into memory
-            mod = SourceFileLoader(mod_info["loadname"], mod_info["loadpath"]).load_module()
-            __import__(mod_info["loadname"])
+            # Load Module Spec
+            spec = importlib.util.spec_from_file_location(mod_info["loadname"], mod_info["loadpath"])
+
+            # Import module from spec
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[mod_info["loadname"]] = module
+
+            # Execute and instantiate Module
+            spec.loader.exec_module(module)
+            mod_instance = module.Module(mod_info["name"], mod_info["fqn"], self._framework)
+
+            self._console.debug("Module ID: %s" % id(module))
+            self._console.debug("Module class ID: %s" % id(module.Module))
 
             # Add the module to the framework's loaded modules
-            self._loaded_modules[mod_info["dispname"]] = sys.modules[mod_info["loadname"]].Module(mod_info["name"], mod_info["dispname"], self._framework)
-            self._add_module_to_category(mod_info["category"], mod_info["dispname"])
+            self._loaded_modules[mod_info["fqn"]] = mod_instance
+            self._add_module_to_category(mod_info["category"], mod_info["fqn"])
+
+            # Restore options
+            if saved_options:
+                mod_instance._options = saved_options
 
             # Success
-            return True
+            return True, mod_instance
 
         # =====================================================================================
         # Exception: Module has missing dependency
         # =====================================================================================
         except ImportError as e:
             # notify the user of missing dependencies
-            self._console.error(f"Module '{mod_info["dispname"]}' disabled. Dependency required: '{utils.to_unicode_str(e)[16:]}'")
+            self._console.error(f"Module '{mod_info["fqn"]}' disabled. Dependency required: '{utils.to_unicode_str(e)[16:]}'")
 
         # =====================================================================================
         # Exception: Unhandled
@@ -221,13 +255,13 @@ class ModuleManager:
             # notify the user of errors
             self._console.error(f"An exception occurred while importing module '{mod_info["name"]}'")
             self._console.print_exception()
-            self._console.error(f"Module '{mod_info["dispname"]}' disabled.")
+            self._console.error(f"Module '{mod_info["fqn"]}' disabled.")
 
         # Module Import failed: Remove the module from the loaded modules
-        self._loaded_modules.pop(mod_info["dispname"], None)
-        self._add_module_to_category('disabled', mod_info["dispname"])
+        self._loaded_modules.pop(mod_info["fqn"], None)
+        self._add_module_to_category('disabled', mod_info["fqn"])
 
-        return False
+        return False, None
 
     def _load_package_module(self, path):
         '''
@@ -240,7 +274,7 @@ class ModuleManager:
         mod_info = {}
         mod_info["dirpath"], mod_info["name"] = os.path.split(path)
         mod_info["category"] = re.search('/modules/([^/]*)', mod_info["dirpath"]).group(1)
-        mod_info["dispname"] = '/'.join(re.split('/modules/', mod_info["dirpath"])[-1].split('/') + [mod_info["name"]])
+        mod_info["fqn"] = '/'.join(re.split('/modules/', mod_info["dirpath"])[-1].split('/') + [mod_info["name"]])
 
         self._console.debug("Processing Package module ---> %s" % json.dumps(mod_info, indent=2))
 
@@ -250,8 +284,8 @@ class ModuleManager:
         with utils.add_to_path(mod_info["dirpath"]):
             try:
                 mod_import = importlib.import_module(mod_info["name"])
-                self._loaded_modules[mod_info["dispname"]] = sys.modules[mod_info["name"]].Module(mod_info["dispname"])
-                self._add_module_to_category(mod_info["category"], mod_info["dispname"])
+                self._loaded_modules[mod_info["fqn"]] = sys.modules[mod_info["name"]].Module(mod_info["fqn"])
+                self._add_module_to_category(mod_info["category"], mod_info["fqn"])
 
                 # Success
                 return True
@@ -260,7 +294,7 @@ class ModuleManager:
             # =====================================================================================
             except ImportError as e:
                 # notify the user of missing dependencies
-                self._console.error(f"Module '{mod_info["dispname"]}' disabled. Dependency required: '{utils.to_unicode_str(e)[16:]}'")
+                self._console.error(f"Module '{mod_info["fqn"]}' disabled. Dependency required: '{utils.to_unicode_str(e)[16:]}'")
 
             # =====================================================================================
             # Exception: Unhandled
@@ -269,11 +303,11 @@ class ModuleManager:
                 # notify the user of errors
                 self._console.error(f"An exception occurred while importing module '{mod_info["name"]}'")
                 self._console.print_exception()
-                self._console.error(f"Module '{mod_info["dispname"]}' disabled.")
+                self._console.error(f"Module '{mod_info["fqn"]}' disabled.")
 
         # Module Import failed: Remove the module from the loaded modules
-        self._loaded_modules.pop(mod_info["dispname"], None)
-        self._add_module_to_category("disabled", mod_info["dispname"])
+        self._loaded_modules.pop(mod_info["fqn"], None)
+        self._add_module_to_category("disabled", mod_info["fqn"])
 
         return False
 
@@ -528,15 +562,15 @@ class ModuleManager:
             module_data["last_updated"]     = datetime.strftime(datetime.now(), "%Y-%m-%d")
 
             # Meta data
-            module_data["author"]           = module.meta.get("author")
-            module_data["name"]             = module.meta.get("name")
-            module_data["description"]      = module.meta.get("description")
-            module_data["version"]          = module.meta.get("version", "1.0")
+            module_data["author"]           = module.meta.author
+            module_data["name"]             = module.meta.name
+            module_data["description"]      = module.meta.description
+            module_data["version"]          = module.meta.version
 
             # Optional Data
-            module_data["dependencies"]     = module.meta.get("dependencies", [])
-            module_data["files"]            = module.meta.get("files", [])
-            module_data["required_keys"]    = module.meta.get("required_keys", [])
+            module_data["dependencies"]     = module.meta.dependencies
+            module_data["files"]            = module.meta.files
+            module_data["required_keys"]    = module.meta.required_keys
 
             index.append(module_data)
 

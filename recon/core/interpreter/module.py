@@ -1,6 +1,7 @@
 # =====================================================================================
 # Imports: External
 # =====================================================================================
+import copy
 import os
 import textwrap
 import sqlite3
@@ -56,6 +57,17 @@ class ModuleInterpreter(BaseInterpreter):
         '''
         self.cmdloop()
 
+    def reload(self, new_module=None):
+        '''
+        Reloads the Module interpreter with a new module instance
+
+        :param new_module: The new module instance
+        :type new_module: BaseModule, optional
+        '''
+
+        self._module = new_module
+        super(ModuleInterpreter, self).reload()
+
     # =====================================================================================
     # Command Do Functions: "info"
     # =====================================================================================
@@ -65,11 +77,11 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Print Basic Module information
         for item in ['name', 'author', 'version']:
-            self._console.write(f"{item.title().rjust(10)}: {self._module.meta[item]}")
+            self._console.write(f"{item.title().rjust(10)}: {self._module.get_meta_property(item)}")
 
         # Print any required Keys
-        if self._module.meta.get('required_keys'):
-            self._console.write(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.get('required_keys'))}")
+        if self._module.meta.required_keys:
+            self._console.write(f"{'keys'.title().rjust(10)}: {', '.join(self._module.meta.required_keys)}")
         self._console.write('')
 
         # Print Path/Fully Qualified Name
@@ -79,12 +91,12 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Print Module Description
         self._console.write('Description:')
-        self._console.write(f"{self.SPACER}{textwrap.fill(self._module.meta['description'], 100, subsequent_indent=self.SPACER)}")
+        self._console.write(f"{self.SPACER}{textwrap.fill(self._module.meta.description, 100, subsequent_indent=self.SPACER)}")
         self._console.write('')
 
         # Print Module Option information
         self._console.write('Options:', end='')
-        self._list_options(self._module._options)
+        self._list_options(self._module.get_options())
 
         # Print Module Source information (TODO TBC?)
         if hasattr(self, '_default_source'):
@@ -96,9 +108,9 @@ class ModuleInterpreter(BaseInterpreter):
             self._console.write('')
 
         # Print Module Comments
-        if self._module.meta.get('comments'):
+        if self._module.meta.comments:
             self._console.write('Comments:')
-            for comment in self._module.meta['comments']:
+            for comment in self._module.meta.comments:
                 prefix = '* '
                 if comment.startswith('\t'):
                     prefix = self.SPACER+'- '
@@ -112,7 +124,7 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     def _do_options_list(self, params):
         '''Shows the current context options'''
-        self._list_options(self._module._options)
+        self._list_options(self._module.get_options())
 
     def _do_options_set(self, params):
         '''Sets a current context option'''
@@ -127,12 +139,12 @@ class ModuleInterpreter(BaseInterpreter):
         workspace = self._recon.get_current_workspace()
 
         # Check option is a valid, known Module Option
-        options = self._module._options
+        options = self._module.get_options()
         option_name = option.upper()
         if option_name in options:
             options[option_name] = value
             self._console.write(f"{option_name} => {value}")
-            workspace.set_config_property(option_name, self._module._fqn, options=options)
+            workspace.set_config_property(option_name, self._module.get_fqn(), options=options)
         else:
             self._console.error('Invalid option name.')
 
@@ -146,7 +158,7 @@ class ModuleInterpreter(BaseInterpreter):
             return
 
         # Check option is a valid, known Module Option
-        options = self._module._options
+        options = self._module.get_options()
         option_name = option.upper()
         if option_name in options:
             self._do_options_set(' '.join([option_name, 'None']))
@@ -233,7 +245,7 @@ class ModuleInterpreter(BaseInterpreter):
         if hasattr(self._module, '_default_source'):
             try:
                 self._recon.validate_options()
-                inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
+                inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
                 self._console.table([[x] for x in inputs], header=['Module Inputs'])
             except Exception as e:
                 self._console.output(e.__str__())
@@ -245,14 +257,16 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     def do_run(self, params):
         '''Runs the loaded module'''
+        inputs = []
 
         # Process Inputs
-        inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
-        self._module._validate_inputs(inputs)
+        if hasattr(self._module, '_default_source'):
+            inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
+            self._module._validate_inputs(inputs)
 
         # Run the Module!
         try:
-            self._recon.validate_options()
+            self._recon.validate_options(self._module.get_options())
             if self._module.preflight():
                 self._module.run(inputs)
         # Handler: Keyboard Interrupts from user
@@ -391,7 +405,7 @@ class ModuleInterpreter(BaseInterpreter):
         :returns: List of matching subcommands, if found
         :rtype: list
         '''
-        return [x for x in self._module._options if x.startswith(text.upper())]
+        return [x for x in self._module.get_options() if x.startswith(text.upper())]
     # Auto-complete options "unset" in same way as set
     _complete_options_unset = _complete_options_set
 
