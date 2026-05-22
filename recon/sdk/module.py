@@ -51,9 +51,9 @@ class BaseModule:
         self.__workspace = self.__recon.get_current_workspace()
         self.__db = self.__workspace.get_db()
         self.__key_manager = self.__recon.get_key_manager()
-        self._module_manager = self.__recon.get_module_manager()
-        self._console = self.__recon.get_console()
-        self._options = Options()
+        self.__module_manager = self.__recon.get_module_manager()
+        self.__console = self.__recon.get_console()
+        self.__options = Options()
         self._summary_counts = {}
         self.keys = {}
 
@@ -62,14 +62,14 @@ class BaseModule:
         # =====================================================================================
         if self.meta.query:
             self._default_source = self.meta.query
-            self._options.register_option('source', 'default', True, 'source of input (see \'info\' for details)')
+            self.__options.register_option('source', 'default', True, 'source of input (see \'info\' for details)')
 
         # =====================================================================================
         # Register Module Options
         # =====================================================================================
         if self.meta.options:
             for option in self.meta.options:
-                self._options.register_module_option(option)
+                self.__options.register_module_option(option)
 
         # =====================================================================================
         # Register any required keys
@@ -101,13 +101,13 @@ class BaseModule:
 
             # Check key is set
             if not self.keys.get(key):
-                self._console.debug("Module preflight checks failed.")
-                self._console.error(
+                self.__console.debug("Module preflight checks failed.")
+                self.__console.error(
                     f"'{key}' key must be set for this module to run. See 'keys' command"
                 )
                 return False
 
-        self._console.debug("Module preflight checks passed.")
+        self.__console.debug("Module preflight checks passed.")
         return True
 
     def run(self, inputs):
@@ -121,7 +121,7 @@ class BaseModule:
         try:
             additional_params = self.module_pre()
         except ModuleValidationException as e:
-            self._console.error(str(e))
+            self.__console.error(str(e))
             return
         if additional_params is not None:
             params += additional_params
@@ -190,7 +190,7 @@ class BaseModule:
         :param line: Additional information to print alongside the exception. Optional
         :type line: str
         '''
-        self._get_console().print_exception(line)
+        self.__get_console().print_exception(line)
 
     def output(self, line):
         '''
@@ -199,7 +199,7 @@ class BaseModule:
         :param line: The message/data to print
         :type line: str
         '''
-        self._get_console().output(line)
+        self.__get_console().output(line)
 
     def error(self, line):
         '''
@@ -208,7 +208,7 @@ class BaseModule:
         :param line: The Error message/data to print
         :type line: str
         '''
-        self._get_console().error(line)
+        self.__get_console().error(line)
 
     def alert(self, line):
         '''
@@ -217,7 +217,7 @@ class BaseModule:
         :param line: The message/data to print
         :type line: str
         '''
-        self._get_console().error(line)
+        self.__get_console().error(line)
 
     def verbose(self, line):
         '''
@@ -226,7 +226,7 @@ class BaseModule:
         :param line: The message/data to print
         :type line: str
         '''
-        self._get_console().verbose(line)
+        self.__get_console().verbose(line)
 
     def debug(self, line):
         '''
@@ -235,7 +235,7 @@ class BaseModule:
         :param line: The message/data to print
         :type line: str
         '''
-        self._get_console().debug(line)
+        self.__get_console().debug(line)
 
     def heading(self, line, level=1):
         '''
@@ -245,7 +245,7 @@ class BaseModule:
         :type line: str
         :param level: The header/title indentation level
         '''
-        return self._get_console().heading(line, level)
+        return self.__get_console().heading(line, level)
 
     def table(self, data, header=[], title=''):
         '''
@@ -258,7 +258,7 @@ class BaseModule:
         :param title: The table's title (Optional)
         :type title: str
         '''
-        return self._get_console().table(data, header, title)
+        return self.__get_console().table(data, header, title)
 
     # =====================================================================================
     # Support/Helper Methods
@@ -380,8 +380,8 @@ class BaseModule:
         # Handle Output
         # =====================================================================================
         if self.__recon.get_verbosity() > 1:
-            utils.print_http_request(resp.request, self._console)
-            utils.print_http_response(resp, self._console)
+            utils.print_http_request(resp.request, self.__console)
+            utils.print_http_response(resp, self.__console)
 
         return resp
 
@@ -725,7 +725,7 @@ class BaseModule:
         '''
         Gets the module's options
         '''
-        return self._options
+        return self.__options
 
     def get_option_value(self, option_name, default=None):
         '''
@@ -779,14 +779,14 @@ class BaseModule:
         '''
         return self.__workspace
 
-    def _get_console(self):
+    def __get_console(self):
         '''
         Gets the Console Output instance
 
         :return: The Console Output instance
         :rtype: ConsoleOutput
         '''
-        return self._console
+        return self.__console
 
     # =====================================================================================
     # Internal Functions
@@ -806,7 +806,7 @@ class BaseModule:
         validator_type = self.meta.validator
         if not validator_type:
             # Passthru, no validator required
-            self._console.debug('No validator required.')
+            self.__console.debug('No validator required.')
             return
         validator_name = validator_type.capitalize() + 'Validator'
 
@@ -818,13 +818,13 @@ class BaseModule:
         # Check Validator found
         if not validator:
             # Passthru, no validator defined
-            self._console.debug('No validator defined.')
+            self.__console.debug('No validator defined.')
             return
 
         # Run Validators against inputs
         for _input in inputs:
             validator.validate(_input)
-            self._console.debug('All inputs validated.')
+            self.__console.debug('All inputs validated.')
 
     def _record_module_run(self):
         '''
