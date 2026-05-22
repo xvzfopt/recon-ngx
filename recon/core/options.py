@@ -66,6 +66,10 @@ class Options(dict):
             description=option.description
         )
 
+    def __contains__(self, name):
+        name = self.__keytransform__(name)
+        return super(Options, self).__contains__(name)
+
     def __getitem__(self, name):
         name = self.__keytransform__(name)
         return super(Options, self).__getitem__(name)
