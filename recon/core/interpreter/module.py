@@ -77,7 +77,7 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Print Basic Module information
         for item in ['name', 'author', 'version']:
-            self._console.write(f"{item.title().rjust(10)}: {getattr(self._module.meta, item)}")
+            self._console.write(f"{item.title().rjust(10)}: {self._module.get_meta_property(item)}")
 
         # Print any required Keys
         if self._module.meta.required_keys:
@@ -96,7 +96,7 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Print Module Option information
         self._console.write('Options:', end='')
-        self._list_options(self._module._options)
+        self._list_options(self._module.get_options())
 
         # Print Module Source information (TODO TBC?)
         if hasattr(self, '_default_source'):
@@ -124,7 +124,7 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     def _do_options_list(self, params):
         '''Shows the current context options'''
-        self._list_options(self._module._options)
+        self._list_options(self._module.get_options())
 
     def _do_options_set(self, params):
         '''Sets a current context option'''
@@ -139,12 +139,12 @@ class ModuleInterpreter(BaseInterpreter):
         workspace = self._recon.get_current_workspace()
 
         # Check option is a valid, known Module Option
-        options = self._module._options
+        options = self._module.get_options()
         option_name = option.upper()
         if option_name in options:
             options[option_name] = value
             self._console.write(f"{option_name} => {value}")
-            workspace.set_config_property(option_name, self._module._fqn, options=options)
+            workspace.set_config_property(option_name, self._module.get_fqn(), options=options)
         else:
             self._console.error('Invalid option name.')
 
@@ -158,7 +158,7 @@ class ModuleInterpreter(BaseInterpreter):
             return
 
         # Check option is a valid, known Module Option
-        options = self._module._options
+        options = self._module.get_options()
         option_name = option.upper()
         if option_name in options:
             self._do_options_set(' '.join([option_name, 'None']))
@@ -245,7 +245,7 @@ class ModuleInterpreter(BaseInterpreter):
         if hasattr(self._module, '_default_source'):
             try:
                 self._recon.validate_options()
-                inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
+                inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
                 self._console.table([[x] for x in inputs], header=['Module Inputs'])
             except Exception as e:
                 self._console.output(e.__str__())
@@ -261,7 +261,7 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Process Inputs
         if hasattr(self._module, '_default_source'):
-            inputs = self._get_source_entries(self._module._options['source'], self._module._default_source)
+            inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
             self._module._validate_inputs(inputs)
 
         # Run the Module!
@@ -405,7 +405,7 @@ class ModuleInterpreter(BaseInterpreter):
         :returns: List of matching subcommands, if found
         :rtype: list
         '''
-        return [x for x in self._module._options if x.startswith(text.upper())]
+        return [x for x in self._module.get_options() if x.startswith(text.upper())]
     # Auto-complete options "unset" in same way as set
     _complete_options_unset = _complete_options_set
 
