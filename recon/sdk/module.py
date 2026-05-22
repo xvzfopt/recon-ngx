@@ -12,9 +12,8 @@ import requests
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
-from recon.core.exceptions import ValidationException
 from recon.core.options import Options
-from recon.sdk import ModuleMetadata
+from recon.sdk.exceptions import ModuleValidationException
 from recon.utils import validators, utils
 
 # =====================================================================================
@@ -46,14 +45,14 @@ class BaseModule:
         :param recon: The Recon-NGX App instance
         :type recon: ReconNGXApp
         '''
-        self._name = name
-        self._fqn = fqn
-        self._recon = recon
-        self._workspace = self._recon.get_current_workspace()
-        self._db = self._workspace.get_db()
-        self._key_manager = self._recon.get_key_manager()
-        self._module_manager = self._recon.get_module_manager()
-        self._console = self._recon.get_console()
+        self.__name = name
+        self.__fqn = fqn
+        self.__recon = recon
+        self.__workspace = self.__recon.get_current_workspace()
+        self.__db = self.__workspace.get_db()
+        self.__key_manager = self.__recon.get_key_manager()
+        self._module_manager = self.__recon.get_module_manager()
+        self._console = self.__recon.get_console()
         self._options = Options()
         self._summary_counts = {}
         self.keys = {}
@@ -77,14 +76,14 @@ class BaseModule:
         # =====================================================================================
         for key in self.meta.required_keys:
             # Add key to the database
-            if not self._key_manager.has_key(key):
-                self._key_manager.add_key(key, "")
+            if not self.__key_manager.has_key(key):
+                self.___key_manager.add_key(key, "")
 
             # Migrate the old key if needed (from .dat file to DB)
-            self._key_manager.migrate_key(key)
+            self.__key_manager.migrate_key(key)
 
             # Add key to local keys dict
-            self.keys[key] = self._key_manager.get_key_value(key)
+            self.keys[key] = self.__key_manager.get_key_value(key)
 
     def preflight(self):
         '''
@@ -98,7 +97,7 @@ class BaseModule:
         # Check Keys
         for key in self.meta.required_keys:
             # Fetch any key updates
-            self.keys[key] = self._key_manager.get_key_value(key)
+            self.keys[key] = self.__key_manager.get_key_value(key)
 
             # Check key is set
             if not self.keys.get(key):
@@ -119,7 +118,11 @@ class BaseModule:
         self._summary_counts.clear()
 
         # Execute any pre-run tasks
-        additional_params = self.module_pre()
+        try:
+            additional_params = self.module_pre()
+        except ModuleValidationException as e:
+            self._console.error(str(e))
+            return
         if additional_params is not None:
             params += additional_params
 
@@ -175,7 +178,7 @@ class BaseModule:
         :param key_name: The name of the target key
         :type key_name: str
         '''
-        return self._key_manager.get_key_value(key_name)
+        return self.__key_manager.get_key_value(key_name)
 
     # =====================================================================================
     # Console Output Functions
@@ -340,21 +343,21 @@ class BaseModule:
         '''
 
         # Process Timeout
-        kwargs["timeout"] = kwargs.get("timeout", self._recon.get_options()["timeout"])
+        kwargs["timeout"] = kwargs.get("timeout", self.__recon.get_options()["timeout"])
 
         # =====================================================================================
         # Build headers
         # =====================================================================================
         kwargs["headers"] = kwargs.get("headers", {})
         if "user-agent" not in [header.lower() for header in kwargs["headers"]]:
-            kwargs["headers"]["user-agent"] = self._recon.get_options()["user-agent"]
+            kwargs["headers"]["user-agent"] = self.__recon.get_options()["user-agent"]
         # Normalize Headers capitalisation
         kwargs["headers"] = {k.title(): v for k, v in kwargs["headers"].items()}
 
         # =====================================================================================
         # Process Proxy
         # =====================================================================================
-        proxy = self._recon.get_options()["proxy"]
+        proxy = self.__recon.get_options()["proxy"]
         if proxy:
             kwargs["proxies"] = {
                 "http": "http://%s" % proxy,
@@ -376,7 +379,7 @@ class BaseModule:
         # =====================================================================================
         # Handle Output
         # =====================================================================================
-        if self._recon.get_verbosity() > 1:
+        if self.__recon.get_verbosity() > 1:
             utils.print_http_request(resp.request, self._console)
             utils.print_http_response(resp, self._console)
 
@@ -389,7 +392,7 @@ class BaseModule:
         '''
         Performs a direct Workspace Database query
         '''
-        return self._get_db().query(*args, **kwargs)
+        return self.__get_db().query(*args, **kwargs)
 
     def insert_domains(self, domain=None, notes=None, mute=None):
         '''
@@ -402,7 +405,7 @@ class BaseModule:
         :param mute: Whether the returns of the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_domains(domain, notes, mute)
+        return self.__get_db().insert_domains(domain, notes, mute)
 
     def insert_companies(self, company=None, description=None, notes=None, mute=False):
         '''
@@ -417,7 +420,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_companies(company, description, notes, mute)
+        return self.__get_db().insert_companies(company, description, notes, mute)
 
     def insert_netblocks(self, netblock=None, notes=None, mute=False):
         '''
@@ -430,7 +433,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_netblocks(netblock, notes, mute)
+        return self.__get_db().insert_netblocks(netblock, notes, mute)
 
     def insert_locations(self, latitude=None, longitude=None, street_address=None, notes=None, mute=False):
         '''
@@ -447,7 +450,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_locations(latitude, longitude, street_address, notes, mute)
+        return self.__get_db().insert_locations(latitude, longitude, street_address, notes, mute)
 
     def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None,
                                status=None, notes=None, mute=False):
@@ -471,7 +474,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_vulnerabilities(host, reference, example, publish_date, category, status, notes, mute)
+        return self.__get_db().insert_vulnerabilities(host, reference, example, publish_date, category, status, notes, mute)
 
     def insert_ports(self, ip_address=None, host=None, port=None, protocol=None, banner=None, notes=None, mute=False):
         '''
@@ -492,7 +495,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_ports(ip_address, host, port, protocol, banner, notes, mute)
+        return self.__get_db().insert_ports(ip_address, host, port, protocol, banner, notes, mute)
 
     def insert_hosts(self, host=None, ip_address=None, region=None, country=None, latitude=None, longitude=None,
                      notes=None, mute=False):
@@ -516,7 +519,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_hosts(host, ip_address, region, country, latitude, longitude, notes, mute)
+        return self.__get_db().insert_hosts(host, ip_address, region, country, latitude, longitude, notes, mute)
 
     def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None,
                         country=None, phone=None, notes=None, mute=False):
@@ -544,7 +547,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_contacts(
+        return self.__get_db().insert_contacts(
             first_name, middle_name, last_name, email, title, region, country, phone, notes, mute
         )
 
@@ -568,7 +571,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_credentials(username, password, _hash, _type, leak, notes, mute)
+        return self.__get_db().insert_credentials(username, password, _hash, _type, leak, notes, mute)
 
     def insert_leaks(self, leak_id=None, description=None, source_refs=None, leak_type=None, title=None,
                      import_date=None, leak_date=None, attackers=None, num_entries=None, score=None,
@@ -616,7 +619,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_leaks(
+        return self.__get_db().insert_leaks(
             leak_id, description, source_refs, leak_type, title, import_date, leak_date, attackers, num_entries,
             score, num_domains_affected, attack_method, target_industries, password_hash, password_type, targets,
             media_refs, notes, mute
@@ -652,7 +655,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_pushpins(
+        return self.__get_db().insert_pushpins(
             source, screen_name, profile_name, profile_url, media_url, thumb_url,
             message, latitude, longitude, time, notes, mute
         )
@@ -674,7 +677,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_profiles(username, resource, url, category, notes, mute)
+        return self.__get_db().insert_profiles(username, resource, url, category, notes, mute)
 
     def insert_repositories(self, name=None, owner=None, description=None, resource=None, category=None, url=None,
                             notes=None, mute=False):
@@ -698,7 +701,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self._get_db().insert_repositories(name, owner, description, resource, category, url, notes, mute)
+        return self.__get_db().insert_repositories(name, owner, description, resource, category, url, notes, mute)
 
     # =====================================================================================
     # Getters
@@ -710,13 +713,13 @@ class BaseModule:
         :return: The module's name
         :rtype: str
         '''
-        return self._name
+        return self.__name
 
     def get_fqn(self):
         '''
         Gets the Module's Fully Qualified Name, e.g. reporting/test/module1
         '''
-        return self._fqn
+        return self.__fqn
 
     def get_options(self):
         '''
@@ -724,23 +727,41 @@ class BaseModule:
         '''
         return self._options
 
-    def get_option_value(self, option_name):
+    def get_option_value(self, option_name, default=None):
         '''
         Gets the value of the specified option
 
         :param option_name: The name of the target option
         :type option_name: str
+        :param default: A value to be returned if the option does not exist. Defaults to None
+        :type: any, optional
         '''
-        return self.get_options().get(option_name)
+        value = default
+        options = self.get_options()
+        if option_name in options:
+            value = options[option_name]
+        return value
+
+    def get_meta_property(self, property):
+        '''
+        Gets the value of the specified meta property. Returns None if property does not exist
+
+        :returns: The value of the specified meta property, or None
+        :rtype: any
+        '''
+        value = None
+        if hasattr(self.meta, property):
+            value = getattr(self.meta, property)
+        return value
 
     def get_data_path(self):
         '''
         Gets the path to the Recon NGX data folder
 
         '''
-        return self._recon.get_data_path()
+        return self.__recon.get_data_path()
 
-    def _get_db(self):
+    def __get_db(self):
         '''
         Gets the current Database instance
 
@@ -749,14 +770,14 @@ class BaseModule:
         '''
         return self._db
 
-    def _get_workspace(self):
+    def __get_workspace(self):
         '''
         Gets the current Workspace instance
 
         :return: The current Workspace instance
         :rtype: Workspace
         '''
-        return self._workspace
+        return self.__workspace
 
     def _get_console(self):
         '''
@@ -810,11 +831,11 @@ class BaseModule:
         Records the execution of a module for analytics and stats
         '''
         # Get DB
-        workspace = self._recon.get_current_workspace()
+        workspace = self.__recon.get_current_workspace()
         db = workspace.get_db()
         db.query(
-            f"INSERT OR REPLACE INTO dashboard (module, runs) VALUES ('{self._fqn}', "
-            f"COALESCE((SELECT runs FROM dashboard WHERE module='{self._fqn}')+1, 1))"
+            f"INSERT OR REPLACE INTO dashboard (module, runs) VALUES ('{self.get_fqn()}', "
+            f"COALESCE((SELECT runs FROM dashboard WHERE module='{self.get_fqn()}')+1, 1))"
         )
 
 
