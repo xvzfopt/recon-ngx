@@ -34,7 +34,7 @@ class Options(dict):
         self.init_option('proxy', None, False, 'proxy server (address:port)')
         self.init_option('threads', 10, True, 'number of threads (where applicable)')
         self.init_option('timeout', 10, True, 'socket timeout (seconds)')
-        self.init_option('user-agent', f"Recon-ng/v{version.split('.')[0]}", True, 'user-agent string')
+        self.init_option('user-agent', f"Recon-NGX/v{version}", True, 'user-agent string')
         self.init_option('verbosity', 1, True, 'verbosity level (0 = minimal, 1 = verbose, 2 = debug)')
 
     def register_option(self, name, value, required, description):
