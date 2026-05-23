@@ -64,3 +64,4 @@ class ModuleOption:
     default: Any
     required: bool
     description: str
+    validators: list = field(default_factory=list)
