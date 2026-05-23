@@ -124,6 +124,12 @@ class Workspace:
         '''
         return self._path
 
+    def get_downloads_path(self):
+        '''
+        Gets the path to the workspace's Downloads directory
+        '''
+        return os.path.join(self.get_path(), 'downloads')
+
     def get_db(self):
         '''
         Gets the database instance for this workspace

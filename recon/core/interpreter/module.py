@@ -474,7 +474,7 @@ class ModuleInterpreter(BaseInterpreter):
                 raise ReconNGXException("Invalid source query: %s --> %s" % (type(oe).__name__, oe))
 
             # Process Results
-            if len(results[0]) > 1:
+            if results and len(results[0]) > 1:
                 entries += [x[:len(x)] for x in results]
             else:
                 entries += [x[0] for x in results]
@@ -493,6 +493,6 @@ class ModuleInterpreter(BaseInterpreter):
 
         # Check we have some sources to use
         if not entries:
-            raise ReconNGXException("Source contains no input.")
+            raise ReconNGXException("Source contains no input. There are no entries to run the module against.")
 
         return entries

@@ -1,6 +1,13 @@
+"""
+Recon-NGX - Module SDK - Metadata classes
+================================
+Contains Metadata classes to be used when defining a Module's metadata
+"""
+
 # =====================================================================================
 # Imports: External
 # =====================================================================================
+from typing import Any
 from dataclasses import dataclass
 from dataclasses import field
 
@@ -54,6 +61,7 @@ class ModuleOption:
     '''
 
     name: str
-    default: str
+    default: Any
     required: bool
     description: str
+    validators: list = field(default_factory=list)

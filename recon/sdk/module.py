@@ -1,3 +1,9 @@
+"""
+Recon-NGX - Module SDK - Base Module
+================================
+Contains The BaseModule class that all Recon-NGX Modules should inherit from.
+"""
+
 # =====================================================================================
 # Imports: External
 # =====================================================================================
@@ -29,7 +35,6 @@ class BaseModule:
     # =====================================================================================
     meta = None
     data_path = ""
-    workspace = ""
 
     # =====================================================================================
     # Functions
@@ -153,9 +158,12 @@ class BaseModule:
         '''
         pass
 
-    def module_run(self):
+    def module_run(self, inputs):
         '''
         Module Execution Function. Add the main logic of your Module here
+
+        :param inputs: The Source inputs that the module will be run against
+        :type inputs: list
         '''
         pass
 
@@ -217,7 +225,7 @@ class BaseModule:
         :param line: The message/data to print
         :type line: str
         '''
-        self.__get_console().error(line)
+        self.__get_console().alert(line)
 
     def verbose(self, line):
         '''
@@ -761,6 +769,22 @@ class BaseModule:
         '''
         return self.__recon.get_data_path()
 
+    def get_downloads_path(self):
+        '''
+        Gets the path to the current Workspace Downloads folder
+
+        '''
+        return self.get_workspace().get_downloads_path()
+
+    def get_workspace(self):
+        '''
+        Gets the current Workspace instance
+
+        :return: The current Workspace instance
+        :rtype: Workspace
+        '''
+        return self.__workspace
+
     def __get_db(self):
         '''
         Gets the current Database instance
@@ -769,15 +793,6 @@ class BaseModule:
         :rtype: WorkspaceDB
         '''
         return self._db
-
-    def __get_workspace(self):
-        '''
-        Gets the current Workspace instance
-
-        :return: The current Workspace instance
-        :rtype: Workspace
-        '''
-        return self.__workspace
 
     def __get_console(self):
         '''

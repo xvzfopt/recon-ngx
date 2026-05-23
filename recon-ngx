@@ -16,6 +16,7 @@ sys.dont_write_bytecode = True
 # Imports: Internal
 # =====================================================================================
 from recon.core import ReconNGXApp
+from recon.utils import utils
 from recon.core.output import colors
 
 # =====================================================================================
@@ -28,20 +29,8 @@ def get_version():
     :returns: The recon-ngx version number
     :rtype: str
     '''
-    version = None
-
-    # Parse Version File
     path = os.path.join(Path(__file__).resolve().parent, "VERSION")
-    with open(path, "r") as version_file:
-        for line in version_file.readlines():
-            if line.startswith("version"):
-                version = line.split("=")[1].rstrip().strip()
-
-    # Validate
-    if not version:
-        raise ValueError("Could not parse Recon-NGX version file.")
-
-    return version
+    return utils.get_version_number(path)
 
 def launch_ui(args):
     '''
@@ -73,6 +62,7 @@ def launch_ui(args):
         'check_version': args.check_version if not args.stealth else False,
         'marketplace_enabled': args.marketplace if not args.stealth else False,
         'modules_path': args.modules_path if args.modules_path else None,
+        'data_path': args.data_path if args.data_path else None,
         'accessible' : args.accessible,
     }
 
@@ -102,7 +92,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-w', help='Load/create a workspace', metavar='workspace', dest='workspace', action='store')
     parser.add_argument('-r', help='Load commands from a resource file', metavar='filename', dest='script_file', action='store')
-    parser.add_argument('--modules-path', help='Overrides the directory to load modules from', dest='modules_path', action='store', default=None)
+    parser.add_argument('--modules-path', help='Overrides the directory to load modules from (dev-only)', dest='modules_path', action='store', default=None)
+    parser.add_argument('--data-path', help='Overrides the data files directory (dev-only)', dest='data_path', action='store', default=None)
     parser.add_argument('--no-version', help='Disable version check', dest='check_version', default=True, action='store_false')
     parser.add_argument('--no-marketplace', help='Disable remote module management', dest='marketplace', default=True, action='store_false')
     parser.add_argument('--stealth', help='Disable all passive requests (--no-*)', dest='stealth', default=False, action='store_true')

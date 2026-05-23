@@ -49,6 +49,9 @@ class ConsoleOutput:
         self._accessible = accessible
         self._global_options = options
 
+        # Keep track of all console output for future checking/tests
+        self.__output = []
+
     def write(self, line, end="\n"):
         '''
         Main Console write function. Provides Cmd class with a stdout abstraction layer so that we can handle
@@ -65,6 +68,9 @@ class ConsoleOutput:
 
         # Write to stdout
         self._stdout.write(line)
+
+        # Record to log for later usage
+        self.__output.append(utils.ansi_clean(line))
 
         # Spool to file
         if self._spool_dest:
@@ -234,7 +240,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        self.write(f"{colors.COLOR_G}[*]{colors.COLOR_N} {line}")
+        self.write(f"{colors.COLOR_G_BOLD}[*]{colors.COLOR_N} {line}")
 
     def verbose(self, line):
         '''
@@ -348,6 +354,18 @@ class ConsoleOutput:
             # Print bottom of ascii table
             self.write(separator)
             self.write('')
+
+    # =====================================================================================
+    # Getters
+    # =====================================================================================
+    def get_output(self):
+        '''
+        Returns all output lines that the console has logged so far in the current session
+
+        :return: The console's output so far
+        :rtype: list
+        '''
+        return self.__output
 
     # =====================================================================================
     # Setters
