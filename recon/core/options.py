@@ -21,6 +21,7 @@ class Options(dict):
     def __init__(self, *args, **kwargs):
         self.required = {}
         self.description = {}
+        self.validators = {}
         super(Options, self).__init__(*args, **kwargs)
 
     def initialise_global_options(self, version):
@@ -63,7 +64,8 @@ class Options(dict):
             name=option.name,
             value=option.default,
             required=option.name,
-            description=option.description
+            description=option.description,
+            validators=option.validators
         )
 
     def __contains__(self, name):
@@ -111,11 +113,12 @@ class Options(dict):
             return float(orig)
         return value
 
-    def init_option(self, name, value=None, required=False, description=''):
+    def init_option(self, name, value=None, required=False, description='', validators=None):
         name = self.__keytransform__(name)
         self[name] = value
         self.required[name] = required
         self.description[name] = description
+        self.validators[name] = validators
 
     def serialize(self):
         options = []
