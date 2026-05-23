@@ -19,6 +19,7 @@ from recon.core.workspace import WorkspaceManager
 from recon.core.interpreter import ModuleInterpreter
 from recon.core.interpreter import FrameworkInterpreter
 from recon.core.keys import KeyManager
+from recon.sdk.exceptions import *
 from recon.core.exceptions import *
 
 # =====================================================================================
@@ -180,13 +181,48 @@ class ReconNGXApp:
         # Validate Module Options if set
         if module_options:
             for option_name in module_options:
-                if not self.is_option_set(option_name, module_options) and self.is_option_required(option_name, module_options):
-                    raise ValidationException("Value required for the '%s' option." % option_name)
+                self.validate_module_option(option_name, module_options)
 
         # Validate Global options
         for option_name in self.get_options():
-            if not self.is_option_set(option_name) and self.is_option_required(option_name):
+            self.validate_global_option(option_name, self.get_options())
+
+    def validate_global_option(self, option_name, options):
+        '''
+        Validates a single global/framework option
+
+        :param option_name: The name of the global option to validate
+        :type option_name: str
+        :param options: The Options object containing the option
+        :type options: Options
+        '''
+
+        # If Option is required, make sure it's set
+        if self.is_option_required(option_name, options):
+            if not self.is_option_set(option_name, options):
                 raise ValidationException("Value required for the '%s' option." % option_name)
+
+    def validate_module_option(self, option_name, options):
+        '''
+        Validates a single module option
+
+        :param option_name: The name of the global option to validate
+        :type option_name: str
+        :param options: The Options object containing the option
+        :type options: Options
+        '''
+
+        # If Option is required, make sure it's set
+        if self.is_option_required(option_name, options):
+            if not self.is_option_set(option_name, options):
+                raise ModuleValidationException("Value required for the '%s' option." % option_name)
+
+        # Perform any option validation
+        if option_name in options.validators:
+            for validator_class in options.validators[option_name]:
+                validator = validator_class()
+                if not validator.validate(options[option_name]):
+                    raise ModuleValidationException(f"Validation failed for the '{option_name}' option => %s" % validator.get_error())
 
     def execute_script(self, path):
         '''
@@ -336,7 +372,7 @@ class ReconNGXApp:
         Gets the current Global Options
 
         :returns: Current Global Options dict
-        :rtype: dict
+        :rtype: Options
         '''
         return self._options
 
@@ -463,12 +499,15 @@ class ReconNGXApp:
     # =====================================================================================
     # Setters
     # =====================================================================================
-    def set_workspace(self, name):
+    def set_workspace(self, name, load_modules=True):
         '''
         Sets the current workspace, creating it if necessary
 
         :param name: The name of the workspace
         :type name: string
+        :param load_modules: (test only) Whether to load modules. Used as an override to skip loading of all modules
+                when running in test mode, where only a single module is going to be loaded
+        :type load_modules: bool
         '''
         if not name:
             return
@@ -488,8 +527,9 @@ class ReconNGXApp:
             if key in workspace_config:
                 self._options[key] = workspace_config[key]
 
-        # Reload Modules
-        self._module_manager.load_modules()
+        # Load Modules
+        if load_modules:
+            self._module_manager.load_modules()
         return True
 
     def finish_script_execution(self):
