@@ -277,7 +277,7 @@ class ModuleInterpreter(BaseInterpreter):
             self._console.print_exception()
             self._console.error('A request took too long to complete. If the issue persists, increase the global TIMEOUT option.')
         # Handler: Framework/Validation Exception
-        except (ReconNGXException):
+        except (ReconNGXException, validators.ValidationException):
             self._console.print_exception()
             if self._recon.get_verbosity() > 1:
                 raise
