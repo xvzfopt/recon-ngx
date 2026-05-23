@@ -46,11 +46,10 @@ at this stage. While close to an initial release with much of the refactoring wo
 it is not yet feature-complete and work is still ongoing.
 
 **Current Areas of Focus:**
-* Finalising module execution contexts and implementing outstanding module commands
-* Migrating legacy Framework.py and Base.py functionality into the new interpreter hierarchy
+* Finalising the Module SDK
+* Defining an architecture for Module unit testing
 * Stabilising compatibility with existing recon-ng modules
 * Reviewing and modernising old or unreliable modules
-* Improving internal architecture and developer tooling
 
 ## :alembic: Roadmap & Upcoming Features
 * Initial v1.0.0 release, with conversion to the new framework complete
