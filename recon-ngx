@@ -16,6 +16,7 @@ sys.dont_write_bytecode = True
 # Imports: Internal
 # =====================================================================================
 from recon.core import ReconNGXApp
+from recon.utils import utils
 from recon.core.output import colors
 
 # =====================================================================================
@@ -28,20 +29,8 @@ def get_version():
     :returns: The recon-ngx version number
     :rtype: str
     '''
-    version = None
-
-    # Parse Version File
     path = os.path.join(Path(__file__).resolve().parent, "VERSION")
-    with open(path, "r") as version_file:
-        for line in version_file.readlines():
-            if line.startswith("version"):
-                version = line.split("=")[1].rstrip().strip()
-
-    # Validate
-    if not version:
-        raise ValueError("Could not parse Recon-NGX version file.")
-
-    return version
+    return utils.get_version_number(path)
 
 def launch_ui(args):
     '''
