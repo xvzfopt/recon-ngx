@@ -10,6 +10,7 @@ import re
 import html
 import ipaddress
 import subprocess
+import re
 from contextlib import contextmanager
 
 # =====================================================================================
@@ -292,3 +293,48 @@ def execute_shell_command(command):
     stderr = proc.stderr.read()
 
     return stdout, stderr
+
+def get_version_number(path):
+    '''
+    Parses and returns the Recon-NGX version number from the specified version file path
+
+    :param path: The path to the version file
+    :type path: str
+    '''
+
+    # Parse Version File
+    with open(path, "r") as version_file:
+        for line in version_file.readlines():
+            if line.startswith("version"):
+                version = line.split("=")[1].rstrip().strip()
+
+    # Validate
+    if not version:
+        raise ValueError("Could not parse Recon-NGX version file.")
+
+    return version
+
+
+# 7-bit C1 ANSI sequences
+def ansi_clean(text):
+    '''
+    Cleans the provided text of any ANSI sequences
+
+    :param text: The text to clean
+    :type text: str
+    :returns: The original text, with any ANSI sequences removed
+    :rtype: str
+    '''
+    ansi_escape = re.compile(r'''
+        \x1B  # ESC
+        (?:   # 7-bit C1 Fe (except CSI)
+            [@-Z\\-_]
+        |     # or [ for CSI, followed by a control sequence
+            \[
+            [0-?]*  # Parameter bytes
+            [ -/]*  # Intermediate bytes
+            [@-~]   # Final byte
+        )
+    ''', re.VERBOSE)
+    result = ansi_escape.sub('', text)
+    return result
