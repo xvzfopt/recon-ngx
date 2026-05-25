@@ -7,12 +7,7 @@ Contains The BaseModule class that all Recon-NGX Modules should inherit from.
 # =====================================================================================
 # Imports: External
 # =====================================================================================
-import html
 import http.cookiejar
-import io
-import os
-import sys
-import json
 import requests
 
 # =====================================================================================
