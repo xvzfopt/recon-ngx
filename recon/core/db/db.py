@@ -261,7 +261,9 @@ class ReconNGXDatabase:
         '''
         self._console.debug(f"DATABASE => {path}")
         self._console.debug(f"QUERY => {query}")
-        with sqlite3.connect(path) as conn:
+        conn  = sqlite3.connect(path)
+
+        try:
             with closing(conn.cursor()) as cur:
                 if values:
                     self._console.debug(f"VALUES => {repr(values)}")
@@ -280,6 +282,8 @@ class ReconNGXDatabase:
                     conn.commit()
                     results = cur.rowcount
                 return results
+        finally:
+            conn.close()
 
 
     def _migrate_db(self):
