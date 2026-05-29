@@ -46,8 +46,7 @@ at this stage. While close to an initial release with much of the refactoring wo
 it is not yet feature-complete and work is still ongoing.
 
 **Current Areas of Focus:**
-* Finalising the Module SDK
-* Defining an architecture for Module unit testing
+* Module SDK
 * Stabilising compatibility with existing recon-ng modules
 * Reviewing and modernising old or unreliable modules
 
