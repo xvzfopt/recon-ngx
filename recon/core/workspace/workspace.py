@@ -69,6 +69,7 @@ class Workspace:
         '''
         # Initialise config file
         open(self._config_path, 'a').close()
+        option_name = option_name.upper()
 
         # Read existing contents
         config_data = {}
@@ -156,3 +157,23 @@ class Workspace:
         :rtype: dict
         '''
         return self._config_data
+
+    def get_base_config_data(self):
+        '''
+        Gets the base Recon-NGX Workspace config
+
+        :return: The Recon-NGX Base Config data
+        :rtype: dict
+        '''
+        return self.get_config_data().get("base", {})
+
+    def get_module_config_data(self, module_name):
+        '''
+        Gets the Workspace config for the specified module
+
+        :param module_name: The name of the target module
+        :type module_name: str
+        :return: The Workspace Config data of the specified module
+        :rtype: dict
+        '''
+        return self.get_config_data().get(module_name, {})

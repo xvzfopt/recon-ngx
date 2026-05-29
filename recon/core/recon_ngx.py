@@ -134,7 +134,6 @@ class ReconNGXApp:
         self.set_workspace(workspace_name)
         self._f_interpreter.start()
 
-
     def open_module(self, fqn):
         '''
         Opens the specified module
@@ -146,6 +145,13 @@ class ReconNGXApp:
         self._m_interpreter = ModuleInterpreter(self, self._console, module)
         self._active_context = self._m_interpreter
 
+        # Load Workspace Module Config
+        module_config = self._workspace.get_module_config_data(module.get_fqn())
+        module_options = module.get_options()
+        for option_name in module_config:
+            module_options[option_name] = module_config[option_name]
+
+        # Module Main
         while True:
             # On KeyboardInterrupt, either go back or exit app
             try:
@@ -521,11 +527,11 @@ class ReconNGXApp:
         # Update Prompt
         self._f_interpreter.set_workspace_name(self._workspace.get_name())
 
-        # Load Workspace configuration
-        workspace_config = self._workspace.get_config_data()
+        # Load Workspace Base Configuration
+        base_config = self._workspace.get_base_config_data()
         for key in self._options:
-            if key in workspace_config:
-                self._options[key] = workspace_config[key]
+            if key in base_config:
+                self._options[key] = base_config[key]
 
         # Load Modules
         if load_modules:
