@@ -11,6 +11,7 @@ import html
 import ipaddress
 import subprocess
 import re
+import importlib.util
 from contextlib import contextmanager
 
 # =====================================================================================
@@ -338,3 +339,26 @@ def ansi_clean(text):
     ''', re.VERBOSE)
     result = ansi_escape.sub('', text)
     return result
+
+def load_file_module(name, path):
+    '''
+    Loaded the module at the specified path
+
+    :param path: The path to the module .py file
+    :type path: str
+    :returns: The loaded module class
+    :rtype: Module # TODO
+    '''
+
+
+    # Load Module spec file
+    spec = importlib.util.spec_from_file_location(name, path)
+
+    # Import module from spec
+    module = importlib.util.module_from_spec(spec)
+
+    # Create Module Instance
+    spec.loader.exec_module(module)
+
+    return module
+
