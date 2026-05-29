@@ -216,15 +216,10 @@ class ModuleManager:
         # Attempt Module Import
         # =====================================================================================
         try:
-            # Load Module Spec
-            spec = importlib.util.spec_from_file_location(mod_info["loadname"], mod_info["loadpath"])
 
-            # Import module from spec
-            module = importlib.util.module_from_spec(spec)
+            # Import module and instantiate
+            module = utils.load_file_module(mod_info["loadname"], mod_info["loadpath"])
             sys.modules[mod_info["loadname"]] = module
-
-            # Execute and instantiate Module
-            spec.loader.exec_module(module)
             mod_instance = module.Module(mod_info["name"], mod_info["fqn"], self._framework)
 
             self._console.debug("Module ID: %s" % id(module))
