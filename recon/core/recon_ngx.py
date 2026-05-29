@@ -218,7 +218,7 @@ class ReconNGXApp:
                 raise ModuleValidationException("Value required for the '%s' option." % option_name)
 
         # Perform any option validation
-        if option_name in options.validators:
+        if options.validators.get(option_name):
             for validator_class in options.validators[option_name]:
                 validator = validator_class()
                 if not validator.validate(options[option_name]):

@@ -58,6 +58,7 @@ class ModuleOption:
         default: The option's default value
         required: Whether the option is required for the module to run
         description: The option's description
+        validators: An optional array of validators to run the option value through
     '''
 
     name: str
