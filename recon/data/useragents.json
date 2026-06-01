@@ -1,0 +1,142 @@
+[
+    {
+        "environment": "Windows",
+        "client": "Chrome",
+        "agent_string": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "summary": "Chrome 136"
+    },
+    {
+        "environment": "Windows",
+        "client": "Chrome",
+        "agent_string": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        "summary": "Chrome 135"
+    },
+    {
+        "environment": "Windows",
+        "client": "Firefox",
+        "agent_string": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
+        "summary": "Firefox 138"
+    },
+    {
+        "environment": "Windows",
+        "client": "Firefox",
+        "agent_string": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
+        "summary": "Firefox 137"
+    },
+    {
+        "environment": "Windows",
+        "client": "Edge",
+        "agent_string": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0",
+        "summary": "Edge 136"
+    },
+    {
+        "environment": "Linux",
+        "client": "Chrome",
+        "agent_string": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "summary": "Chrome 136"
+    },
+    {
+        "environment": "Linux",
+        "client": "Firefox",
+        "agent_string": "Mozilla/5.0 (X11; Linux x86_64; rv:138.0) Gecko/20100101 Firefox/138.0",
+        "summary": "Firefox 138"
+    },
+    {
+        "environment": "MacOS",
+        "client": "Chrome",
+        "agent_string": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+        "summary": "Chrome 136"
+    },
+    {
+        "environment": "MacOS",
+        "client": "Firefox",
+        "agent_string": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:138.0) Gecko/20100101 Firefox/138.0",
+        "summary": "Firefox 138"
+    },
+    {
+        "environment": "MacOS",
+        "client": "Safari",
+        "agent_string": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+        "summary": "Safari 18"
+    },
+    {
+        "environment": "MacOS",
+        "client": "Edge",
+        "agent_string": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0",
+        "summary": "Edge 136"
+    },
+    {
+        "environment": "Android",
+        "client": "Chrome",
+        "agent_string": "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36",
+        "summary": "Google Pixel 9 - Chrome 136"
+    },
+    {
+        "environment": "Android",
+        "client": "Chrome",
+        "agent_string": "Mozilla/5.0 (Linux; Android 15; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36",
+        "summary": "Samsung Galaxy S24 Ultra - Chrome 136"
+    },
+    {
+        "environment": "Android",
+        "client": "Firefox",
+        "agent_string": "Mozilla/5.0 (Android 15; Mobile; rv:138.0) Gecko/138.0 Firefox/138.0",
+        "summary": "Android (Generic) - Firefox 138"
+    },
+
+    {
+        "environment": "iOS",
+        "client": "Safari",
+        "agent_string": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+        "summary": "iPhone (Generic) - Safari 18"
+    },
+    {
+        "environment": "iOS",
+        "client": "Safari",
+        "agent_string": "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+        "summary": "iPad (Generic) - Safari 18"
+    },
+
+    {
+        "environment": "Bot",
+        "client": "Google Bot",
+        "agent_string": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "summary": "Googlebot Web Crawler"
+    },
+    {
+        "environment": "Bot",
+        "client": "Bing Bot",
+        "agent_string": "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+        "summary": "Bingbot Web Crawler"
+    },
+    {
+        "environment": "Bot",
+        "client": "DuckDuck Bot",
+        "agent_string": "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)",
+        "summary": "DuckDuckGo Web Crawler"
+    },
+    {
+        "environment": "CLI",
+        "client": "curl",
+        "agent_string": "curl/8.12.1",
+        "summary": "curl v8.12.1"
+    },
+    {
+        "environment": "CLI",
+        "client": "wget",
+        "agent_string": "Wget/1.24.5",
+        "summary": "wget v1.24.5"
+    },
+    {
+        "environment": "CLI",
+        "client": "requests",
+        "agent_string": "python-requests/2.32.3",
+        "summary": "Python Requests Library v2.32.3"
+    },
+    {
+        "environment": "CLI",
+        "client": "Recon-NGX",
+        "agent_string": "Recon-NGX/v<version>",
+        "summary": "Recon-NGX v<version>"
+    }
+]
