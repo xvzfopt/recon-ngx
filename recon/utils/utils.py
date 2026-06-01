@@ -12,7 +12,9 @@ import ipaddress
 import subprocess
 import re
 import importlib.util
+from pathlib import Path
 from contextlib import contextmanager
+
 
 # =====================================================================================
 # Imports: Internal
@@ -361,4 +363,31 @@ def load_file_module(name, path):
     spec.loader.exec_module(module)
 
     return module
+
+def get_user_agents():
+    '''
+    Gets the available User-Agent options from the UserAgents file
+
+    :returns: List of available User-Agents
+    :rtype: list[dict]
+    '''
+    useragents = []
+
+    # Build Paths
+    root_path = os.path.join(Path(__file__).parent.parent.parent.parent, "recon-ngx")
+    path = os.path.join(root_path, "recon", "data", "useragents.json")
+    version_path = os.path.join(root_path, "VERSION")
+
+    # Read User Agents file
+    with open(path, "r") as useragents_file:
+        useragents = json.loads(useragents_file.read())
+
+    # Adjust Recon-NGX Agent
+    version_number = get_version_number(version_path)
+    useragents[-1]["agent_string"] = useragents[-1]["agent_string"].replace("<version>", version_number)
+    useragents[-1]["summary"] = useragents[-1]["summary"].replace("<version>", version_number)
+
+    return useragents
+
+
 
