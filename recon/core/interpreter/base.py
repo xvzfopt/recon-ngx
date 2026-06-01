@@ -6,8 +6,8 @@ import re
 import sqlite3
 import sys
 from cmd import Cmd
+from copy import deepcopy
 
-from recon.core.output.colors import COLOR_N
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
@@ -176,6 +176,99 @@ class BaseInterpreter(Cmd):
     def do_help(self, params):
         '''Displays this menu'''
         super(BaseInterpreter, self).do_help(params)
+        
+    # =====================================================================================
+    # Command Do Function: useragent
+    # =====================================================================================
+    def do_useragent(self, params):
+        '''Manages the User Agent used in HTTP requests'''
+
+        # Check subcommand was provided
+        if not params:
+            self.help_useragent()
+            return
+        arg, params = self._parse_params(params)
+
+        # Check subcommand is valid
+        if arg in self._get_subcommands('useragent'):
+            return getattr(self, '_do_useragent_'+arg)(params)
+        else:
+            self.help_useragent()
+
+    def _do_useragent_show(self, params):
+        '''Displays the current HTTP User Agent'''
+
+        # Process Verbosity
+        verbose = False
+        args, params = self._parse_params(params)
+        if args:
+            if args.lower() in ["--verbose", "-v"]:
+                verbose = True
+            else:
+                self._help_useragent_show()
+                return
+
+        # Build Table
+        self._console.heading("Current user Agent")
+        current_agent_string = self._recon.get_option_value("user-agent")
+        header, rows = self._user_agents_table(current_agent_string, verbose)
+
+        # Display Table
+        self._console.table(rows, header=header)
+
+    def _do_useragent_list(self, params):
+        '''Lists available User Agent options'''
+
+        # Process Verbosity
+        verbose = False
+        args, params = self._parse_params(params)
+        if args:
+            if args.lower() in ["--verbose", "-v"]:
+                verbose = True
+            else:
+                self._help_useragent_list()
+                return
+
+            # Display Table
+        header, rows = self._user_agents_table(verbose=verbose)
+        self._console.table(rows, header)
+
+    def _do_useragent_set(self, params):
+        '''Sets the current HTTP User Agent to the specified option number (see useragent list)'''
+
+        # Check User-Agent index specified
+        if not params:
+            self.help_useragent()
+
+        # Get User agents
+        useragents = utils.get_user_agents()
+
+        # Check option is valid
+        try:
+            idx = int(params)
+            if idx < 0 or idx > len(useragents):
+                raise ValueError()
+        except ValueError:
+            self._console.error("Selected User Agent number is invalid. See 'useragent list' for options")
+            return
+
+        # Update User Agent
+        new_user_agent = useragents[idx]
+        agent_string = new_user_agent["agent_string"]
+        summary = new_user_agent["summary"]
+        options = self._recon.get_options()
+        options["user-agent"] = agent_string
+
+        # Persist to Workspace
+        workspace = self._recon.get_current_workspace()
+        workspace.set_config_property("user-agent", options=options)
+
+        self._console.output("User Agent Set: %s - %s --> %s" % (
+            new_user_agent["environment"],
+            new_user_agent["client"],
+            new_user_agent["summary"]
+        ))
+        self._console.output("New User-Agent string: %s" % new_user_agent["agent_string"])
 
     # =====================================================================================
     # Command Do Functions: "db"
@@ -1128,8 +1221,44 @@ class BaseInterpreter(Cmd):
     _complete_spool_status = _complete_spool_stop = _complete_spool_start
 
     # =====================================================================================
+    # Auto-completion functions: useragent
+    # =====================================================================================
+    def complete_useragent(self, text, line, *ignored):
+        '''
+        Auto-completion for useragent command
+
+        :param text: The subcommand text to auto-complete, which has been typed so far
+        :type text: str
+        :param line: The entire line that has been typed so far
+        :type line: str
+        :returns: List of matching subcommands, if found
+        :rtype: list
+        '''
+        arg, params = self._parse_params(line.split(' ', 1)[1])
+        subs = self._get_subcommands('useragent')
+
+        # If directly matching sub-command found, return it
+        if arg in subs:
+            return getattr(self, '_complete_useragent_'+arg)(text, params)
+
+        # Else return all available matching subcommands
+        return [sub for sub in subs if sub.startswith(text)]
+
+    # =====================================================================================
     # Command Help Functions
     # =====================================================================================
+    def help_useragent(self):
+        self._console.write(getattr(self, 'do_useragent').__doc__)
+        self._console.write(f"{os.linesep}Usage: useragent <{'|'.join(self._get_subcommands('useragent'))}> [...]{os.linesep}")
+
+    def _help_useragent_show(self):
+        self._console.write(getattr(self, '_do_useragent_show').__doc__)
+        self._console.write(f"{os.linesep}Usage: useragent show [-v, --verbose]{os.linesep}")
+
+    def _help_useragent_list(self):
+        self._console.write(getattr(self, '_do_useragent_list').__doc__)
+        self._console.write(f"{os.linesep}Usage: useragent list [-v, --verbose]{os.linesep}")
+
     def help_modules(self):
         self._console.write(getattr(self, 'do_modules').__doc__)
         self._console.write(f"{os.linesep}Usage: modules <{'|'.join(self._get_subcommands('modules'))}> [...]{os.linesep}")
@@ -1248,6 +1377,50 @@ class BaseInterpreter(Cmd):
     # =====================================================================================
     # Helpers
     # =====================================================================================
+    def _user_agents_table(self, current_agent_string=None, verbose=False):
+        '''
+        Builds and returns the table of user agents. If Current Agent String is set, the table will display only the
+        details of that agent
+        '''
+        useragents = utils.get_user_agents()
+
+        # Build Table Header
+        header = ["#", "Environment", "Client"]
+        if verbose:
+            header.append("Agent String")
+        else:
+            header.append("Type")
+
+        # Populate table rows
+        rows = []
+        for idx in range(len(useragents)):
+            user_agent = useragents[idx]
+
+            # Filter to current agent, if specified
+            if current_agent_string:
+                if user_agent["agent_string"] == current_agent_string:
+                    if verbose:
+                        rows.append([idx, user_agent["environment"], user_agent["client"], user_agent["agent_string"]])
+                    else:
+                        rows.append([idx, user_agent["environment"], user_agent["client"], user_agent["summary"]])
+                    break
+
+            # Otherwise create full table
+            else:
+                if verbose:
+                    rows.append([idx, user_agent["environment"], user_agent["client"], user_agent["agent_string"]])
+                else:
+                    rows.append([idx, user_agent["environment"], user_agent["client"], user_agent["summary"]])
+
+        # Check for Custom Agent
+        if current_agent_string and not rows:
+            if verbose:
+                rows.append(["--", "Custom", "Custom", self._recon.get_option_value("user-agent")])
+            else:
+                rows.append(["--", "Custom", "Custom", "[Custom - see 'useragent show --verbose' for full details]"])
+
+        return header, rows
+
     def _list_modules(self, modules):
         '''
         Prints the specified list of modules
