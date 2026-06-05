@@ -245,10 +245,23 @@ class ModuleInterpreter(BaseInterpreter):
         if hasattr(self._module, '_default_source'):
             try:
                 self._recon.validate_options()
-                inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
+
+                # Print input source information
+                self._console.heading("Module SOURCE")
+                source_type = self._get_source_type(self._module.get_option_value('source'))
+                source_value = self._module.get_option_value('source')
+
+                if source_type == "default":
+                    self._console.write(f"{self.SPACER * 2}> [Default] {self._module._default_source}")
+                elif source_type == "query" and source_value != "query":
+                    self._console.write(f"{self.SPACER * 2}> [Query] {" ".join(source_value.split()[1:])}")
+                else:
+                    self._console.write(f"{self.SPACER * 2}> Literal SOURCE value")
+
+                inputs = self._get_source_entries(source_value, self._module._default_source, False)
                 self._console.table([[x] for x in inputs], header=['Module Inputs'])
             except Exception as e:
-                self._console.output(e.__str__())
+                self._console.print_exception()
         else:
             self._console.output('Source option not available for this module.')
             
@@ -259,13 +272,13 @@ class ModuleInterpreter(BaseInterpreter):
         '''Runs the loaded module'''
         inputs = []
 
-        # Process Inputs
-        if hasattr(self._module, '_default_source'):
-            inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
-            self._module._validate_inputs(inputs)
-
         # Run the Module!
         try:
+            # Process Inputs
+            if hasattr(self._module, '_default_source'):
+                inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
+                self._module._validate_inputs(inputs)
+
             self._recon.validate_options(self._module.get_options())
             if self._module.preflight():
                 self._module.run(inputs)
@@ -279,14 +292,10 @@ class ModuleInterpreter(BaseInterpreter):
         # Handler: Framework/Validation Exception
         except (ReconNGXException, validators.ValidationException):
             self._console.print_exception()
-            if self._recon.get_verbosity() > 1:
-                raise
         # Handler: Unexpected exceptions/errors
         except Exception:
             self._console.print_exception()
             self._console.error('Something broken? See https://github.com/xvzfopt/recon-ngx/wiki/Troubleshooting#issue-reporting.')
-            if self._recon.get_verbosity() > 1:
-                raise
 
         # Post run
         # TODO : To be reviewed. _summary_counts doesn't actually seem to be used anywhere??
@@ -453,21 +462,50 @@ class ModuleInterpreter(BaseInterpreter):
     # =====================================================================================
     # Internal Helpers
     # =====================================================================================
-    def _get_source_entries(self, params, query=None):
+    def _get_source_type(self, source_value):
         '''
-        Resolves and gets the source entries (input data) for the Module
+        Gets the source type for the specified SOURCE option value
+
+        :param source_value: The source value to get the type of
+        :type source_value: str
         '''
-        prefix = params.split()[0].lower()
+        source_type = "literal"
+
+        source_components = source_value.split()
+        if source_components[0] == "default":
+            source_type = "default"
+        elif len(source_components) > 1 and source_components[0] == "query":
+            source_type = "query"
+
+        return source_type
+
+    def _get_source_entries(self, source_value, default_source, exception_if_empty=True):
+        '''
+        Resolves and gets the source entries (input data) for the Module, from the provided SOURCE value
+
+        :param source_value: The current value of the SOURCE option
+        :type source_value: str
+        :param default_source: The default SOURCE value of the module
+        :type default_source: str
+        :param exception_if_empty: Whether an exception should be thrown if there are no entries found
+        :type exception_if_empty: bool
+        :returns: The list of source entries/items
+        :rtype: list
+        '''
         entries = []
 
         # =====================================================================================
         # Process Source: Database Query
         # =====================================================================================
-        if prefix in ['query', 'default']:
+        source_type = self._get_source_type(source_value)
+        if source_type in ['query', 'default']:
             workspace = self._recon.get_current_workspace()
             db = workspace.get_db()
 
-            query = ' '.join(params.split()[1:]) if prefix == 'query' else query
+            query = default_source
+            if source_type == "query":
+                query = " ".join(source_value.split()[1:])
+
             try:
                 results = db.query(query)
             except sqlite3.OperationalError as oe:
@@ -482,17 +520,20 @@ class ModuleInterpreter(BaseInterpreter):
         # =====================================================================================
         # Process Source: File
         # =====================================================================================
-        elif os.path.isfile(params):
-            entries += open(params).read().split()
+        elif os.path.isfile(source_value):
+            entries += open(source_value).read().split()
 
         # =====================================================================================
-        # Process Source: Source value itself
+        # Process Source: Source value itself (literal)
         # =====================================================================================
         else:
-            entries.append(params)
+            entries.append(source_value)
 
         # Check we have some sources to use
-        if not entries:
-            raise ReconNGXException("Source contains no input. There are no entries to run the module against.")
+        if not entries and exception_if_empty:
+            raise ReconNGXException(
+                "Source contains no input. There are no entries to run the module against."
+                " Check inputs with the 'input' command, and adjust the SOURCE option value as needed."
+            )
 
         return entries
