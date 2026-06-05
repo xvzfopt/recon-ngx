@@ -34,9 +34,9 @@ class ModuleMetadata:
     '''
 
     name: str
-    author: str
     description: str
     version: str = "1.0.0"
+    authors: list = field(default_factory=list)
     comments: list = field(default_factory=list)
     options: list = field(default_factory=list)
     files: list = field(default_factory=list)

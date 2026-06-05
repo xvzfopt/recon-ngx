@@ -76,8 +76,13 @@ class ModuleInterpreter(BaseInterpreter):
         self._console.write('')
 
         # Print Basic Module information
-        for item in ['name', 'author', 'version']:
+        for item in ['name', 'version']:
             self._console.write(f"{item.title().rjust(10)}: {self._module.get_meta_property(item)}")
+
+        # Display Authors
+        self._console.write(f'{'Authors'.rjust(10)}:')
+        for author in self._module.get_meta_property("authors"):
+            self._console.write(f"{'  - '.rjust(10)}{author}")
 
         # Print any required Keys
         if self._module.meta.required_keys:
