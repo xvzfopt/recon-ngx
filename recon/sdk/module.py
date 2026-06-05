@@ -204,6 +204,15 @@ class BaseModule:
         '''
         self.__get_console().output(line)
 
+    def write(self, line):
+        '''
+        Writes a raw output line to the console, with no additional formatting or spacing
+
+        :param line: The message/data to print
+        :type line: str
+        '''
+        self.__get_console().write(line)
+
     def error(self, line):
         '''
         Formats and prints an Error
@@ -779,6 +788,15 @@ class BaseModule:
         :rtype: Workspace
         '''
         return self.__workspace
+
+    def get_verbosity(self):
+        '''
+        Gets the current verbosity level
+
+        :return: The current verbosity level
+        :rtype: int
+        '''
+        return self.__recon.get_verbosity()
 
     def __get_db(self):
         '''
