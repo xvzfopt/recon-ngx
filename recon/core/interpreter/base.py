@@ -456,7 +456,6 @@ class BaseInterpreter(Cmd):
         # Perform Deletion
         # =====================================================================================
         count = 0
-        self._console.write(row_ids)
         for id in row_ids:
             count += db.delete_row(table, id)
         self._console.output("%s row(s) affected" % count)
