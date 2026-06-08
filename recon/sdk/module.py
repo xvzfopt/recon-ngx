@@ -14,6 +14,7 @@ import requests
 # Imports: Internal
 # =====================================================================================
 from recon.core.options import Options
+from recon.core.output import ProgressBar
 from recon.sdk.exceptions import ModuleValidationException
 from recon.utils import validators, utils
 
@@ -203,6 +204,15 @@ class BaseModule:
         :type line: str
         '''
         self.__get_console().output(line)
+
+    def write(self, line):
+        '''
+        Writes a raw output line to the console, with no additional formatting or spacing
+
+        :param line: The message/data to print
+        :type line: str
+        '''
+        self.__get_console().write(line)
 
     def error(self, line):
         '''
@@ -780,6 +790,15 @@ class BaseModule:
         '''
         return self.__workspace
 
+    def get_verbosity(self):
+        '''
+        Gets the current verbosity level
+
+        :return: The current verbosity level
+        :rtype: int
+        '''
+        return self.__recon.get_verbosity()
+
     def __get_db(self):
         '''
         Gets the current Database instance
@@ -788,6 +807,15 @@ class BaseModule:
         :rtype: WorkspaceDB
         '''
         return self._db
+
+    def get_progress_bar(self, total=100, description="", unit="item"):
+        '''
+        Builds a Progress Bar to be used while iterating module inputs
+
+        :param total: The Progress Bar total value. Defaults to 100
+        :type total: int
+        '''
+        return ProgressBar(self.__console, total, description, unit)
 
     def __get_console(self):
         '''
