@@ -52,7 +52,7 @@ class ConsoleOutput:
         # Keep track of all console output for future checking/tests
         self.__output = []
 
-    def write(self, line, end="\n"):
+    def write(self, line, end="\n", suppress=False):
         '''
         Main Console write function. Provides Cmd class with a stdout abstraction layer so that we can handle
         spooling
@@ -61,13 +61,17 @@ class ConsoleOutput:
         :type line: str
         :param end: Optional line delimiter override. Defaults to newline (\n)
         :type end: str, optional
+        :param suppress: Suppresses output from actually being printed to the console. This is used in cases where
+            output should be logged or written to a spool file, but not printed because that is being handled elsewhere
+            e.g. when the ProgressBar is being used
         '''
         # Append line delimiter if not present
         if not line.endswith(end):
             line += end
 
         # Write to stdout
-        self._stdout.write(line)
+        if not suppress:
+            self._stdout.write(line)
 
         # Record to log for later usage
         self.__output.append(utils.ansi_clean(line))
