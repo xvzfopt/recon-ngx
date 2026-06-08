@@ -14,6 +14,7 @@ import requests
 # Imports: Internal
 # =====================================================================================
 from recon.core.options import Options
+from recon.core.output import ProgressBar
 from recon.sdk.exceptions import ModuleValidationException
 from recon.utils import validators, utils
 
@@ -806,6 +807,15 @@ class BaseModule:
         :rtype: WorkspaceDB
         '''
         return self._db
+
+    def get_progress_bar(self, total=100, description="", unit="item"):
+        '''
+        Builds a Progress Bar to be used while iterating module inputs
+
+        :param total: The Progress Bar total value. Defaults to 100
+        :type total: int
+        '''
+        return ProgressBar(self.__console, total, description, unit)
 
     def __get_console(self):
         '''
