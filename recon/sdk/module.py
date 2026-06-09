@@ -132,7 +132,11 @@ class BaseModule:
             params.insert(0, inputs)
 
         # Execute Module!
-        self.module_run(*params)
+        try:
+            self.module_run(*params)
+        except ModuleValidationException as e:
+            self.__console.error(str(e))
+            return
         self._record_module_run()
 
         # Execute any post-run tasks
