@@ -3,6 +3,7 @@ Recon-NGX - Module SDK - Validator Functions
 ================================
 Contains Validator functions for validating module option values
 """
+import os.path
 
 # =====================================================================================
 # Imports: External
@@ -47,6 +48,82 @@ class AbsValidator:
         :rtype: str
         '''
         return self._error
+
+# =====================================================================================
+# Boolean Value Validator
+# =====================================================================================
+class BooleanValidator(AbsValidator):
+    '''
+    Boolean Validator. Validates that the supplied data is a boolean value
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        super(BooleanValidator, self).__init__()
+        self._error = "Not a valid boolean value"
+
+    def validate(self, value):
+        '''
+        Checks if the specified value to a valid boolean value
+
+        :param value: The value to check
+        :type value: str
+        :returns: True if value is a boolean value, otherwise False
+        :rtype
+        '''
+
+        # Check for Boolean types
+        if isinstance(value, bool):
+            return True
+
+        # Try to coerce value
+        if isinstance(value, str):
+            if value.lower().strip() == "true":
+                return True
+            elif value.lower().strip() == "false":
+                return True
+
+        return False
+
+# =====================================================================================
+# Valid File Validator Class
+# =====================================================================================
+class ValidFileValidator(AbsValidator):
+    '''
+    Valid File Validator. Validates that the supplied path leads to a valid file
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        super(ValidFileValidator, self).__init__()
+        self._error = "Not a valid, existing file"
+
+    def validate(self, path):
+        '''
+        Checks if the specified path points to a valid file
+
+        :param path: The data to check
+        :type path: str
+        :returns: True if path points to a valid file, otherwise False
+        :rtype
+        '''
+
+        # Check is valid
+        if os.path.isfile(path):
+            return True
+
+        self._error = "The specified path does not point to a valid, existing file"
+        return False
 
 # =====================================================================================
 # IPv4 Address Validator
