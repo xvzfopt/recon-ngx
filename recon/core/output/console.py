@@ -253,7 +253,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        if self._global_options['verbosity'] >= 1:
+        if self._global_options['verbosity'] >= 2:
             self.output(line)
 
     def debug(self, line):
