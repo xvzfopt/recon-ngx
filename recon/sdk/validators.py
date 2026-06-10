@@ -49,6 +49,38 @@ class AbsValidator:
         '''
         return self._error
 
+class ProtocolHTTPSValidator(AbsValidator):
+    '''
+    HTTPS Protocol Validator. Validates that the supplied data is a valid HTTP protocol
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        super(ProtocolHTTPSValidator, self).__init__()
+        self._error = "Not a valid HTTP protocol (HTTP/HTTPS)"
+
+    def validate(self, value):
+        '''
+        Checks if the specified value is a valid HTTP protocol
+
+        :param value: The value to check
+        :type value: str
+        :returns: True if value is a HTTP protocol value, otherwise False
+        :rtype
+        '''
+
+        # Check for Boolean types
+        if isinstance(value, str):
+            if value.lower().strip() in ["http", "https"]:
+                return True
+
+        return False
+
 # =====================================================================================
 # Boolean Value Validator
 # =====================================================================================
@@ -69,7 +101,7 @@ class BooleanValidator(AbsValidator):
 
     def validate(self, value):
         '''
-        Checks if the specified value to a valid boolean value
+        Checks if the specified value is a valid boolean value
 
         :param value: The value to check
         :type value: str
