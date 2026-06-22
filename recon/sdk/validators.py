@@ -122,6 +122,39 @@ class BooleanValidator(AbsValidator):
 
         return False
 
+class NumberValidator(AbsValidator):
+    '''
+    Number Validator. Validates that the supplied data is a number
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        super(NumberValidator, self).__init__()
+        self._error = "Not a number"
+
+    def validate(self, data):
+        '''
+        Checks if the specified data is a number
+
+        :param data: The data to check
+        :type data: str
+        :returns: True if data is a number, otherwise False
+        :rtype: bool
+        '''
+
+        # Test Data Type
+        try:
+            data = int(data)
+        except ValueError:
+            return False
+
+        return True
+
 # =====================================================================================
 # Valid File Validator Class
 # =====================================================================================
@@ -151,10 +184,48 @@ class ValidFileValidator(AbsValidator):
         '''
 
         # Check is valid
+        print("Checking Path: %s" % path)
         if os.path.isfile(path):
             return True
 
         self._error = "The specified path does not point to a valid, existing file"
+        return False
+
+class PortNumberValidator(AbsValidator):
+    '''
+    Port Number Validator. Validates that the supplied data is a valid port number
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        super(PortNumberValidator, self).__init__()
+        self._error = "Not a valid port number"
+
+    def validate(self, data):
+        '''
+        Checks if the specified data is a valid port number
+
+        :param data: The data to check
+        :type data: str
+        :returns: True if data is a valid port number, otherwise False
+        :rtype: bool
+        '''
+
+        # Test Data Type
+        try:
+            data = int(data)
+        except ValueError:
+            return False
+
+        # Check range
+        if data > 0 and data <= 65535:
+            return True
+
         return False
 
 # =====================================================================================
