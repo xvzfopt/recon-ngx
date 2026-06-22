@@ -25,11 +25,15 @@ class AbsValidator:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
+    def __init__(self, recon=None):
         '''
         Constructor
+
+        :param recon: The Recon-NGX app instance, if available
+        :type recon: ReconNGXApp
         '''
         self._error = None
+        self._recon = recon
 
     def validate(self, data):
         '''
@@ -57,13 +61,6 @@ class ProtocolHTTPSValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        super(ProtocolHTTPSValidator, self).__init__()
-        self._error = "Not a valid HTTP protocol (HTTP/HTTPS)"
-
     def validate(self, value):
         '''
         Checks if the specified value is a valid HTTP protocol
@@ -79,6 +76,7 @@ class ProtocolHTTPSValidator(AbsValidator):
             if value.lower().strip() in ["http", "https"]:
                 return True
 
+        self._error = "Not a valid HTTP protocol (HTTP/HTTPS)"
         return False
 
 # =====================================================================================
@@ -92,13 +90,6 @@ class BooleanValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        super(BooleanValidator, self).__init__()
-        self._error = "Not a valid boolean value"
-
     def validate(self, value):
         '''
         Checks if the specified value is a valid boolean value
@@ -120,6 +111,7 @@ class BooleanValidator(AbsValidator):
             elif value.lower().strip() == "false":
                 return True
 
+        self._error = "Not a valid boolean value"
         return False
 
 class NumberValidator(AbsValidator):
@@ -130,13 +122,6 @@ class NumberValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        super(NumberValidator, self).__init__()
-        self._error = "Not a number"
-
     def validate(self, data):
         '''
         Checks if the specified data is a number
@@ -151,6 +136,7 @@ class NumberValidator(AbsValidator):
         try:
             data = int(data)
         except ValueError:
+            self._error = "Not a number"
             return False
 
         return True
@@ -166,16 +152,12 @@ class ValidFileValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        super(ValidFileValidator, self).__init__()
-        self._error = "Not a valid, existing file"
-
     def validate(self, path):
         '''
-        Checks if the specified path points to a valid file
+        Checks if the specified path points to a valid file. Checks the following:
+            1. Absolute path
+            2. Data directory relative path
+            3. Relative path
 
         :param path: The data to check
         :type path: str
@@ -183,10 +165,18 @@ class ValidFileValidator(AbsValidator):
         :rtype
         '''
 
-        # Check is valid
-        print("Checking Path: %s" % path)
-        if os.path.isfile(path):
+        # Check: Absolute Path
+        if path.startswith("/") and os.path.isfile(path):
             return True
+        else:
+            # Check: Data Relative Path
+            if self._recon:
+                rel_data_path = os.path.join(self._recon.get_data_path(), path)
+                if os.path.isfile(rel_data_path):
+                    return True
+            # Check: Relative Path
+            elif os.path.isfile(path):
+                return True
 
         self._error = "The specified path does not point to a valid, existing file"
         return False
@@ -199,13 +189,6 @@ class PortNumberValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        super(PortNumberValidator, self).__init__()
-        self._error = "Not a valid port number"
-
     def validate(self, data):
         '''
         Checks if the specified data is a valid port number
@@ -215,6 +198,7 @@ class PortNumberValidator(AbsValidator):
         :returns: True if data is a valid port number, otherwise False
         :rtype: bool
         '''
+        self._error = "Not a valid port number"
 
         # Test Data Type
         try:
@@ -239,13 +223,6 @@ class Ipv4AddressValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        super(Ipv4AddressValidator, self).__init__()
-        self._error = "Not a valid IPv4 Address"
-
     def validate(self, data):
         '''
         Checks if the specified data is a valid IPv4 address
@@ -255,6 +232,7 @@ class Ipv4AddressValidator(AbsValidator):
         :returns: True if data is a valid IPv4 address, otherwise False
         :rtype
         '''
+        self._error = "Not a valid IPv4 Address"
 
         # Check for string
         if not isinstance(data, str):
