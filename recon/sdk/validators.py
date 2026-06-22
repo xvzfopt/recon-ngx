@@ -169,13 +169,9 @@ class ValidFileValidator(AbsValidator):
         if path.startswith("/") and os.path.isfile(path):
             return True
         else:
-            # Check: Data Relative Path
-            if self._recon:
-                rel_data_path = os.path.join(self._recon.get_data_path(), path)
-                if os.path.isfile(rel_data_path):
-                    return True
-            # Check: Relative Path
-            elif os.path.isfile(path):
+            # Check: Data Relative Path and Standard Relative Path
+            rel_data_path = os.path.join(self._recon.get_data_path(), path)
+            if os.path.isfile(rel_data_path) or os.path.isfile(path):
                 return True
 
         self._error = "The specified path does not point to a valid, existing file"
