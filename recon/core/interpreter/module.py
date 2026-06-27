@@ -170,6 +170,27 @@ class ModuleInterpreter(BaseInterpreter):
         else:
             self._console.error('Invalid option name.')
 
+    def _do_options_reset(self, params):
+        '''Resets an option to its default value'''
+
+        # Parse option key and value
+        option, value = self._parse_params(params)
+        if not option:
+            self._help_options_reset()
+            return
+
+        # Get Workspace
+        workspace = self._recon.get_current_workspace()
+
+        # Apply default value
+        options = self._module.get_options()
+        option_name = option.upper()
+        if option_name in options:
+            options.reset_option(option_name)
+            workspace.set_config_property(option_name, options=options)
+        else:
+            self._console.error('Invalid option name.')
+
     # =====================================================================================
     # Command Do Functions: "goptions"
     # =====================================================================================
@@ -229,6 +250,27 @@ class ModuleInterpreter(BaseInterpreter):
         option_name = option.upper()
         if option_name in goptions:
             self._do_goptions_set(' '.join([option_name, 'None']))
+        else:
+            self._console.error('Invalid option name.')
+
+    def _do_goptions_reset(self, params):
+        '''Resets a global option to its default value'''
+
+        # Parse option key and value
+        option, value = self._parse_params(params)
+        if not option:
+            self._help_goptions_reset()
+            return
+
+        # Get Workspace
+        workspace = self._recon.get_current_workspace()
+
+        # Apply default value
+        goptions = self._recon.get_options()
+        option_name = option.upper()
+        if option_name in goptions:
+            goptions.reset_option(option_name)
+            workspace.set_config_property(option_name, options=goptions)
         else:
             self._console.error('Invalid option name.')
 
@@ -451,6 +493,10 @@ class ModuleInterpreter(BaseInterpreter):
     def _help_goptions_unset(self):
         self._console.write(getattr(self, '_do_goptions_unset').__doc__)
         self._console.write(f"{os.linesep}Usage: goptions unset <option>{os.linesep}")
+
+    def _help_goptions_reset(self):
+        self._console.write(getattr(self, '_do_goptions_reset').__doc__)
+        self._console.write(f"{os.linesep}Usage: goptions reset <option>{os.linesep}")
 
     # =====================================================================================
     # Getters

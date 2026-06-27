@@ -589,6 +589,27 @@ class BaseInterpreter(Cmd):
         else:
             self._console.error('Invalid option name.')
 
+    def _do_options_reset(self, params):
+        '''Resets an option to its default value'''
+
+        # Parse option key and value
+        option, value = self._parse_params(params)
+        if not option:
+            self._help_options_reset()
+            return
+
+        # Get Workspace
+        workspace = self._recon.get_current_workspace()
+
+        # Apply default value
+        options = self._recon.get_options()
+        option_name = option.upper()
+        if option_name in options:
+            options.reset_option(option_name)
+            workspace.set_config_property(option_name, options=options)
+        else:
+            self._console.error('Invalid option name.')
+
     # =====================================================================================
     # Command Do Functions: "modules"
     # =====================================================================================
@@ -1281,6 +1302,10 @@ class BaseInterpreter(Cmd):
     def _help_options_unset(self):
         self._console.write(getattr(self, '_do_options_unset').__doc__)
         self._console.write(f"{os.linesep}Usage: options unset <option>{os.linesep}")
+
+    def _help_options_reset(self):
+        self._console.write(getattr(self, '_do_options_reset').__doc__)
+        self._console.write(f"{os.linesep}Usage: options reset <option>{os.linesep}")
 
     def help_db(self):
         self._console.write(getattr(self, 'do_db').__doc__)
