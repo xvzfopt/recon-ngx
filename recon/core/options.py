@@ -22,6 +22,7 @@ class Options(dict):
         self.required = {}
         self.description = {}
         self.validators = {}
+        self.defaults = {}
         super(Options, self).__init__(*args, **kwargs)
 
     def initialise_global_options(self, version):
@@ -52,6 +53,15 @@ class Options(dict):
         :type description: str
         '''
         self.init_option(name=name, value=value, required=required, description=description)
+
+    def reset_option(self, name):
+        '''
+        Resets an option back to its default value
+
+        :param name: The name of the option to reset
+        :type name: str
+        '''
+        self[name] = self.defaults[name]
 
     def register_module_option(self, option):
         '''
@@ -116,6 +126,7 @@ class Options(dict):
     def init_option(self, name, value=None, required=False, description='', validators=None):
         name = self.__keytransform__(name)
         self[name] = value
+        self.defaults[name] = value
         self.required[name] = required
         self.description[name] = description
         self.validators[name] = validators
