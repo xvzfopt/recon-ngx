@@ -66,7 +66,14 @@ class BaseInterpreter(Cmd):
         '''
         self.print_banner()
         self._status = self.STATUS_RUNNING
-        self.cmdloop()
+        while True:
+            try:
+                self.cmdloop()
+            except KeyboardInterrupt:
+                self._console.write("")
+                self._console.alert("Use the 'exit' command to quit")
+                continue
+            break
 
     def print_banner(self):
         '''
