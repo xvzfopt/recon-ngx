@@ -114,9 +114,10 @@ class FrameworkInterpreter(BaseInterpreter):
         if modules:
             for module in modules:
                 rows = []
-                for key in ('path', 'name', 'author', 'version', 'last_updated', 'description', 'required_keys', 'dependencies', 'files', 'status'):
-                    row = (key, module[key])
-                    rows.append(row)
+                for key in ('path', 'name', 'authors', 'version', 'last_updated', 'description', 'required_keys', 'dependencies', 'files', 'status'):
+                    if key in module:
+                        row = (key, module[key])
+                        rows.append(row)
                 self._console.table(rows)
         else:
             self._console.error('Invalid module path.')
