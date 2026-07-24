@@ -557,7 +557,7 @@ class ModuleManager:
             module_data["last_updated"]     = datetime.strftime(datetime.now(), "%Y-%m-%d")
 
             # Meta data
-            module_data["author"]           = module.meta.author
+            module_data["author"]           = module.meta.authors
             module_data["name"]             = module.meta.name
             module_data["description"]      = module.meta.description
             module_data["version"]          = module.meta.version
