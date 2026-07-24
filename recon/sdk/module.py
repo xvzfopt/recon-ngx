@@ -78,7 +78,7 @@ class BaseModule:
         for key in self.meta.required_keys:
             # Add key to the database
             if not self.__key_manager.has_key(key):
-                self.___key_manager.add_key(key, "")
+                self.__key_manager.add_key(key, "")
 
             # Migrate the old key if needed (from .dat file to DB)
             self.__key_manager.migrate_key(key)
