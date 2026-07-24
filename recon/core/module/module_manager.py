@@ -1,8 +1,6 @@
 # =====================================================================================
 # Imports: External
 # =====================================================================================
-from importlib.metadata.diagnose import inspect
-
 import requests
 import os
 import yaml
@@ -18,7 +16,9 @@ from requests.exceptions import HTTPError
 # =====================================================================================
 # Imports: Internal
 # =====================================================================================
+from .dependency_manager import DependencyManager
 from recon.utils import utils
+from recon.core.exceptions import ModuleDownloadFailure
 
 # =====================================================================================
 # Module Manager Class
@@ -63,8 +63,11 @@ class ModuleManager:
         self._modules_path = modules_path
         self._data_path = os.path.join(self._home_path, 'data')
 
-        # Initialise Local Modules Index
+        # Initialise Local Modules Ind, indent=2ex
         self._build_local_index()
+
+        # Initialse Dependency Manager
+        self._dep_manager = DependencyManager(self._console)
 
     # =====================================================================================
     # Index Functions
@@ -150,6 +153,7 @@ class ModuleManager:
         '''
         Loads locally installed modules
         '''
+        self._loaded_modules.clear()
 
         # Traverse Modules Folder for recon-ngx modules
         for dirpath, dirnames, filenames in os.walk(self._modules_path, followlinks=True):
@@ -324,16 +328,51 @@ class ModuleManager:
     # =====================================================================================
     # Installation Functions
     # =====================================================================================
-    def install_module(self, path):
+    def install_module(self, module_data):
         '''
         Installs the specified module
 
-        :param path: The module's path (e.g. discovery/module1)
-        :type path: str
+        :param module_data: The module's data dict
+        :type module_data: dict
         '''
         downloads = {}
 
+        # Process Module Data
+        path = module_data["path"]
+        dependencies = module_data["dependencies"]
+
+        # =====================================================================================
+        # Check Module Dependencies
+        # =====================================================================================
+        if dependencies:
+            self._console.debug("Checking dependencies for module --> %s" % path)
+            missing_dependencies = []
+
+            for dependency in dependencies:
+                if not self._dep_manager.is_satisfied(dependency):
+                    missing_dependencies.append(dependency)
+
+            if missing_dependencies:
+                self._console.alert("Missing dependencies detected")
+                for dependency in missing_dependencies:
+                    self._console.alert(f"{self._console.SPACER} - {dependency}")
+
+                choice = ""
+                while choice not in ["y", "n"]:
+                    choice = self._console.read("Install dependencies now? (Y/n):", default="y")
+
+                if choice == "n":
+                    self._console.output("Skipping module installation")
+                    return
+
+            self._console.output("Installing dependencies. Please Wait...")
+            for dependency in missing_dependencies:
+                self._dep_manager.install(dependency)
+                self._console.output("Dependency installed: %s" % dependency)
+
+        # =====================================================================================
         # Download supporting data files
+        # =====================================================================================
         data_files = self.get_module_from_index(path).get('files', [])
         for data_file in data_files:
             try:
@@ -344,35 +383,62 @@ class ModuleManager:
             except:
                 self._console.error(f"Supporting file download for {path} failed: ({data_file})")
                 self._console.error('Module installation aborted.')
-                raise
+                return
 
+        # =====================================================================================
         # Download the module
+        # =====================================================================================
         rel_path = '.'.join([path, 'py'])
         try:
             dest_path = os.path.join(self._modules_path, rel_path)
             success = self.fetch_marketplace_file('/'.join(['modules', rel_path]), dest_path)
             if not success:
-                raise Exception()
+                raise ModuleDownloadFailure()
         except:
             self._console.error(f"Module installation failed: {path}")
             raise
 
         self._console.output(f"Module installed: {path}")
 
-    def uninstall_module(self, path):
+    def uninstall_module(self, module_data):
         '''
         Uninstalls the specified module
 
-        :param path: The module's path (e.g. discovery/module1)
-        :type path: str
+        :param module_data: The module's data dict
+        :type module_data: dict
         '''
 
+        # Process Module Data
+        path = module_data["path"]
+        dependencies = module_data["dependencies"]
+        
+        # =====================================================================================
+        # Process Dependencies
+        # =====================================================================================
+        if dependencies:
+            self._console.output("Processing module dependencies (%s)" % len(dependencies))
+        for dependency in dependencies:
+            choice = ""
+            while choice not in ["y", "n"]:
+               choice = self._console.read(
+                   f"Uninstall dependency '{self._dep_manager.package_name_from_specifier(dependency)}'? (y/N):",
+                   default="n"
+               )
+
+            if choice == "y":
+                self._dep_manager.uninstall(dependency)
+                self._console.output("Dependency uninstalled")
+
+        # =====================================================================================
         # Remove Module File
+        # =====================================================================================
         rel_path = '.'.join([path, 'py'])
         abs_path = os.path.join(self._modules_path, rel_path)
         os.remove(abs_path)
 
+        # =====================================================================================
         # Remove supporting data files
+        # =====================================================================================
         files = self.get_module_from_index(path).get('files', [])
         for filename in files:
             abs_path = os.path.join(self._data_path, filename)
