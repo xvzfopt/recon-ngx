@@ -533,15 +533,15 @@ class FrameworkInterpreter(BaseInterpreter):
 
     def _help_marketplace_info(self):
         self._console.write(getattr(self, '_do_marketplace_info').__doc__)
-        self._console.write(f"{os.linesep}Usage: marketplace info <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(f"{os.linesep}Usage: marketplace info <path>|<prefix>|<all>{os.linesep}")
 
     def _help_marketplace_install(self):
         self._console.write(getattr(self, '_do_marketplace_install').__doc__)
-        self._console.write(f"{os.linesep}Usage: marketplace install <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(f"{os.linesep}Usage: marketplace install <path>|<prefix>|<all>{os.linesep}")
 
     def _help_marketplace_remove(self):
         self._console.write(getattr(self, '_do_marketplace_remove').__doc__)
-        self._console.write(f"{os.linesep}Usage: marketplace remove <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(f"{os.linesep}Usage: marketplace remove <path>|<prefix>|<all>{os.linesep}")
 
     def help_workspaces(self):
         self._console.write(getattr(self, 'do_workspaces').__doc__)
