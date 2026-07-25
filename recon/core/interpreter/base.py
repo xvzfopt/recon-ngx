@@ -139,9 +139,13 @@ class BaseInterpreter(Cmd):
 
         # Input: Handle EOF when execution script files: Reset stdin
         if line == 'EOF':
-            sys.stdin = sys.__stdin__
-            self._recon.finish_script_execution()
-            return
+            if self._recon.is_running_script():
+                sys.stdin = sys.__stdin__
+                self._recon.finish_script_execution()
+                return
+            # Ctrl + D
+            else:
+                raise KeyboardInterrupt()
 
         # Find target function
         try:
