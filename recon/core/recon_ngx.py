@@ -84,7 +84,6 @@ class ReconNGXApp:
         self._app_path          = sys.path[0]
         self._home_path         = os.path.join(utils.get_user_home_path(), ".%s" % self._name)
         self._modules_path      = os.path.join(self._home_path, "modules")
-        self._data_path         = os.path.join(self._home_path, "data")
         self._workspaces_path   = os.path.join(self._home_path, "workspaces")
 
         # Check for Modules Path override
@@ -167,18 +166,19 @@ class ReconNGXApp:
                     continue
             break
 
-    def validate_options(self, module_options=None):
+    def validate_options(self, module=None):
         '''
         Validates the Global Recon-NGX options. Throws a ValidationException if validation fails.
 
-        :param module_options: Module options to validate (optional)
-        :type module_options: Options, optional
+        :param module: If option validation is being performed for a module, this should be the Module for which
+            validation is being performed. Optional
+        :type module: BaseModule, optional
         :raises: ValidationException
         '''
         # Validate Module Options if set
-        if module_options:
-            for option_name in module_options:
-                self.validate_module_option(option_name, module_options)
+        if module:
+            for option_name in module.get_options():
+                self.validate_module_option(option_name, module)
 
         # Validate Global options
         for option_name in self.get_options():
@@ -199,15 +199,16 @@ class ReconNGXApp:
             if not self.is_option_set(option_name, options):
                 raise ValidationException("Value required for the '%s' option." % option_name)
 
-    def validate_module_option(self, option_name, options):
+    def validate_module_option(self, option_name, module):
         '''
         Validates a single module option
 
         :param option_name: The name of the global option to validate
         :type option_name: str
-        :param options: The Options object containing the option
-        :type options: Options
+        :param module: The Module for which validation is being performed
+        :type module: BaseModule
         '''
+        options = module.get_options()
 
         # If Option is required, make sure it's set
         if self.is_option_required(option_name, options):
@@ -217,7 +218,7 @@ class ReconNGXApp:
         # Perform any option validation
         if options.validators.get(option_name):
             for validator_class in options.validators[option_name]:
-                validator = validator_class(self)
+                validator = validator_class(self, module)
                 if not validator.validate(options[option_name]):
                     raise ModuleValidationException(f"Validation failed for the '{option_name}' option => %s" % validator.get_error())
 
@@ -456,15 +457,6 @@ class ReconNGXApp:
         :type: str
         '''
         return self._home_path
-
-    def get_data_path(self):
-        '''
-        Gets the Recon-NGX data path
-
-        :returns: The absolute path to the Recon-NGX data directory
-        :rtype: str
-        '''
-        return self._data_path
 
     def get_script_path(self):
         '''

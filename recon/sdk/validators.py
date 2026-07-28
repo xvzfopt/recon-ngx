@@ -25,15 +25,19 @@ class AbsValidator:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, recon=None):
+    def __init__(self, recon=None, module=None):
         '''
         Constructor
 
         :param recon: The Recon-NGX app instance, if available
         :type recon: ReconNGXApp
+        :param module: If validation is being performed for a Module, this should be the Module for which the validation
+            is being performed
+        :type module: BaseModule, Optional
         '''
         self._error = None
         self._recon = recon
+        self._module = module
 
     def validate(self, data):
         '''

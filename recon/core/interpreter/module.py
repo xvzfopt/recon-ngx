@@ -326,7 +326,7 @@ class ModuleInterpreter(BaseInterpreter):
                 inputs = self._get_source_entries(self._module.get_option_value('source'), self._module._default_source)
                 self._module._validate_inputs(inputs)
 
-            self._recon.validate_options(self._module.get_options())
+            self._recon.validate_options(self._module)
             if self._module.preflight():
                 self._module.run(inputs)
         # Handler: Keyboard Interrupts from user
