@@ -62,7 +62,6 @@ def launch_ui(args):
         'check_version': args.check_version if not args.stealth else False,
         'marketplace_enabled': args.marketplace if not args.stealth else False,
         'modules_path': args.modules_path if args.modules_path else None,
-        'data_path': args.data_path if args.data_path else None,
         'accessible' : args.accessible,
     }
 
@@ -93,7 +92,6 @@ if __name__ == "__main__":
     parser.add_argument('-w', help='Load/create a workspace', metavar='workspace', dest='workspace', action='store')
     parser.add_argument('-r', help='Load commands from a resource file', metavar='filename', dest='script_file', action='store')
     parser.add_argument('--modules-path', help='Overrides the directory to load modules from (dev-only)', dest='modules_path', action='store', default=None)
-    parser.add_argument('--data-path', help='Overrides the data files directory (dev-only)', dest='data_path', action='store', default=None)
     parser.add_argument('--no-version', help='Disable version check', dest='check_version', default=True, action='store_false')
     parser.add_argument('--no-marketplace', help='Disable remote module management', dest='marketplace', default=True, action='store_false')
     parser.add_argument('--stealth', help='Disable all passive requests (--no-*)', dest='stealth', default=False, action='store_true')

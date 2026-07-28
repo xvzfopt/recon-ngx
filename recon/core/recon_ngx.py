@@ -38,7 +38,7 @@ class ReconNGXApp:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible, modules_path, data_path) :
+    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible, modules_path) :
         '''
         Recon-NGX Core App Consructor
 
@@ -54,8 +54,6 @@ class ReconNGXApp:
         :type marketplace_enabled: bool
         :param modules_path: A modules path override to load modules from a custom directory
         :type modules_path: str
-        :param data_path: A data path override specifying an alternative location where data files should be loaded from
-        :type data_path: str
         '''
         super(ReconNGXApp, self).__init__()
 
@@ -95,13 +93,6 @@ class ReconNGXApp:
                 self._console.error("Invalid modules path specified: '%s'. Check that this is a valid directory" % modules_path)
                 sys.exit(1)
             self._modules_path = modules_path
-
-        # Check for Data Path override
-        if data_path:
-            if not os.path.isdir(data_path):
-                self._console.error("Invalid data path specified: '%s'. Check that this is a valid directory" % data_path)
-                sys.exit(1)
-            self._data_path = data_path
 
         # Validate Parameters
         if verbosity not in [0, 1, 2]:

@@ -32,7 +32,6 @@ class BaseModule:
     # Properties
     # =====================================================================================
     meta = None
-    data_path = ""
 
     # =====================================================================================
     # Functions
@@ -772,13 +771,6 @@ class BaseModule:
         if hasattr(self.meta, property):
             value = getattr(self.meta, property)
         return value
-
-    def get_data_path(self):
-        '''
-        Gets the path to the Recon NGX data folder
-
-        '''
-        return self.__recon.get_data_path()
 
     def get_package_path(self):
         '''
