@@ -71,6 +71,7 @@ class FrameworkInterpreter(BaseInterpreter):
     def _do_marketplace_search(self, params):
         '''Searches marketplace modules'''
         mm = self._recon.get_module_manager()
+        mm.fetch_marketplace_index()
 
         # Search Modules
         if params:
