@@ -32,7 +32,7 @@ class ModuleManager:
     # =====================================================================================
     # Properties
     # =====================================================================================
-    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/master/'
+    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/develop'
 
     MODULE_STATUS_UNINSTALLED   = "Uninstalled"
     MODULE_STATUS_INSTALLED     = "Installed"
@@ -76,8 +76,8 @@ class ModuleManager:
         '''
         Fetches the Modules index from the Marketplace
         '''
-        self._console.debug("Fetching Marketplace Index...")
         url = self.URL_MARKETPLACE + "/modules.yml"
+        self._console.debug("Fetching Marketplace Index => %s" % url)
         file_dest = os.path.join(self._home_path, "modules.yml")
 
         # Fetch Index
