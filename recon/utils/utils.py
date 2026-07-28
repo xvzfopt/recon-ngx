@@ -342,27 +342,99 @@ def ansi_clean(text):
     result = ansi_escape.sub('', text)
     return result
 
-def load_file_module(name, path):
+def find_directory_files(path, excluded_dirs=None):
     '''
-    Loaded the module at the specified path
+    Traverses the specified directory and builds a flat list of contained files.
 
-    :param path: The path to the module .py file
+    :param path: The path to the target directory
     :type path: str
-    :returns: The loaded module class
-    :rtype: Module # TODO
+    :param excluded_dirs: An optional list of directories to exclude and ignore
+    :type: excluded_dirs: list, optional
+    :returns: A flat list of contained files
+    :rtype: bool
+    '''
+    files = []
+
+    # Traverse path and find files
+    for dirpath, dirnames, filenames in os.walk(path, followlinks=True):
+        # Check for Directory exclusions
+        dirname = os.path.split(dirpath)[-1]
+        if excluded_dirs and dirname in excluded_dirs:
+            continue
+
+        for filename in [f for f in filenames]:
+            abs_path = os.path.join(dirpath, filename)
+            files.append(os.path.relpath(abs_path, path))
+
+    return files
+
+def is_python_package(path):
+    '''
+    Checks if the specified path points to a valid Python Package
+
+    :param path: The path to check
+    :type path: str
+    :returns: True if path points to a valid python package, False otherwise
+    :rtype: bool
+    '''
+    if not path.startswith("__") and os.path.isdir(path):
+        package_init = os.path.join(path, '__init__.py')
+        if os.path.isfile(package_init):
+            return True
+    return False
+
+def load_module_meta(path):
+    '''
+    Loads a Module's metadata
+
+    :param path: The path of the Module's package
+    :type path: str
+    :returns: The module's ModuleMetadata object
+    :rtype: ModuleMetadata
     '''
 
+    # Get Module spec
+    spec = importlib.util.spec_from_file_location("meta", "%s/meta.py" % path)
 
-    # Load Module spec file
-    spec = importlib.util.spec_from_file_location(name, path)
+    # Import meta module
+    meta_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(meta_module)
+
+    return meta_module.meta
+
+def load_package_module(name, path):
+    '''
+    Loads a package-based module
+
+    :param name: The name of the module being loaded
+    :type name: str
+    :param path: The path of the module package
+    :type path: str
+    :returns The loaded Module class
+    :rtype: BaseModule
+    '''
+
+    # Get Module spec
+    spec = importlib.util.spec_from_file_location(
+        name,
+        "%s/module.py" % path,
+        submodule_search_locations=[path]
+    )
 
     # Import module from spec
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
 
     # Create Module Instance
     spec.loader.exec_module(module)
 
+    # Load module Metadata
+    meta = load_module_meta(path)
+    module.Module.meta = meta
+
     return module
+
+
 
 def get_user_agents():
     '''
@@ -389,5 +461,15 @@ def get_user_agents():
 
     return useragents
 
+
+# =====================================================================================
+# Testbed
+# =====================================================================================
+if __name__ == "__main__":
+    # Load package-based module and get back its class
+    root_path = os.path.join(Path(__file__).parent.parent.parent.parent.parent, "recon-ngx-main", "recon-ngx")
+    package_mod_path = os.path.join(root_path, "test/modules_dev/modules/recon/domains-hosts/shodan_hostname")
+    module = load_package_module("shodan_hostname", package_mod_path)
+    print(dir(module))
 
 
