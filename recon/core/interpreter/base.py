@@ -176,8 +176,7 @@ class BaseInterpreter(Cmd):
     # =====================================================================================
     def do_exit(self, params):
         '''Exists the Framework'''
-        self._status = self.STATUS_EXITED
-        return True
+        sys.exit()
 
     def do_back(self, params):
         '''Exits the current context'''
