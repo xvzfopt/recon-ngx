@@ -8,7 +8,9 @@ Contains The BaseModule class that all Recon-NGX Modules should inherit from.
 # Imports: External
 # =====================================================================================
 import http.cookiejar
+import os.path
 import requests
+import inspect
 
 # =====================================================================================
 # Imports: Internal
@@ -777,6 +779,14 @@ class BaseModule:
 
         '''
         return self.__recon.get_data_path()
+
+    def get_package_path(self):
+        '''
+        Gets the path to the Module package
+        '''
+        return os.path.dirname(os.path.abspath(
+            inspect.getfile(type(self))
+        ))
 
     def get_downloads_path(self):
         '''
