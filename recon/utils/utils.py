@@ -340,6 +340,7 @@ def ansi_clean(text):
         )
     ''', re.VERBOSE)
     result = ansi_escape.sub('', text)
+    result = result.replace("\x01", "").replace("\x02", "")
     return result
 
 def find_directory_files(path, excluded_dirs=None):
