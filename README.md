@@ -27,31 +27,30 @@ making it easier to maintain, extend and modernise.
 * Fixes and reliability improvements to existing modules
 * Creation of additional modules
 * Expansion of the module SDK to enhance module effectiveness and allow for development of more complex modules
-* Automatic dependency installation
 
 ## :gear: Features & Improvements
 **Current Improvements include:**
-* Complete rearchitecture of core framework
-* Decoupling and abstraction of internal systems into separate components
-* Improved and optimised error handling and messaging
-* Improved module validation process
-* Refactoring and expansion of obtuse/minified code to improve readability and maintainability
-* Expanded and improved code documentation 
+* :white_check_mark: Complete rearchitecture of core framework
+* :white_check_mark: Decoupling and abstraction of internal systems into separate components
+* :white_check_mark: Improved and optimised error handling and messaging
+* :white_check_mark: Improved module validation process
+* :white_check_mark: Refactoring and expansion of obtuse/minified code to improve readability and maintainability
+* :white_check_mark: Expanded and improved code documentation 
+* :white_check_mark: Automatic Dependency Installation
+* :white_check_mark: Package-based Modules
 
 Additional improvements and architectural changes are ongoing as development continues.
 
 ## :round_pushpin: Current Status
 Recon-NGX is currently under active development, and should not be considered production-ready
-at this stage. While close to an initial release with much of the refactoring work already done, 
-it is not yet feature-complete and work is still ongoing.
+at this stage. While transformation of the main app is now complete, the conversion of Modules for 
+compatibility is ongoing.
 
 **Current Areas of Focus:**
-* Module SDK
-* Stabilising compatibility with existing recon-ng modules
 * Reviewing and modernising old or unreliable modules
 
 ## :alembic: Roadmap & Upcoming Features
-* Initial v1.0.0 release, with conversion to the new framework complete
+* Review, update and QoL improvements for Modules
 * Automatic module dependency installation
 * Creation of a Graphical User Interface
 
