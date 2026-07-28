@@ -71,6 +71,7 @@ class FrameworkInterpreter(BaseInterpreter):
     def _do_marketplace_search(self, params):
         '''Searches marketplace modules'''
         mm = self._recon.get_module_manager()
+        mm.fetch_marketplace_index()
 
         # Search Modules
         if params:
@@ -114,9 +115,10 @@ class FrameworkInterpreter(BaseInterpreter):
         if modules:
             for module in modules:
                 rows = []
-                for key in ('path', 'name', 'author', 'version', 'last_updated', 'description', 'required_keys', 'dependencies', 'files', 'status'):
-                    row = (key, module[key])
-                    rows.append(row)
+                for key in ('path', 'name', 'authors', 'version', 'last_updated', 'description', 'required_keys', 'dependencies', 'files', 'status'):
+                    if key in module:
+                        row = (key, module[key])
+                        rows.append(row)
                 self._console.table(rows)
         else:
             self._console.error('Invalid module path.')
@@ -133,9 +135,12 @@ class FrameworkInterpreter(BaseInterpreter):
         mm = self._recon.get_module_manager()
         modules = [m for m in mm.get_module_index() if params in m['path'] or params == 'all']
         if modules:
-            for module in modules:
-                mm.install_module(module['path'])
-            self._do_modules_reload('')
+            for module_data in modules:
+                mm.install_module(module_data)
+
+            # Reload Modules
+            mm = self._recon.get_module_manager()
+            mm.load_modules()
         else:
             self._console.error('Invalid module path.')
 
@@ -151,14 +156,14 @@ class FrameworkInterpreter(BaseInterpreter):
         target_modules = params.split(" ")
         modules_to_remove = []
         mm = self._recon.get_module_manager()
-        for module in mm.get_module_index():
-            if mm.is_installed(module["path"]) and (module["path"] in target_modules or "all" in target_modules):
-                modules_to_remove.append(module["path"])
+        for module_data in mm.get_module_index():
+            if mm.is_installed(module_data["path"]) and (module_data["path"] in target_modules or "all" in target_modules):
+                modules_to_remove.append(module_data)
 
         # Remove Modules
         if modules_to_remove:
-            for module in modules_to_remove:
-                mm.uninstall_module(module)
+            for module_data in modules_to_remove:
+                mm.uninstall_module(module_data)
             self._do_modules_reload('')
         else:
             self._console.error('Invalid module path --> %s' % params)
@@ -400,7 +405,10 @@ class FrameworkInterpreter(BaseInterpreter):
         :rtype: list
         '''
         mm = self._recon.get_module_manager()
-        return [x['path'] for x in mm.get_module_index() if x['status'] == mm.MODULE_STATUS_INSTALLED and x['path'].startswith(text)]
+        modules = [x['path'] for x in mm.get_module_index() if x['status'] in
+                   [mm.MODULE_STATUS_INSTALLED, mm.MODULE_STATUS_OUTDATED, mm.MODULE_STATUS_DISABLED]
+                   and x['path'].startswith(text)]
+        return modules
 
     # =====================================================================================
     # Auto-completion Functions: workspaces
@@ -533,15 +541,15 @@ class FrameworkInterpreter(BaseInterpreter):
 
     def _help_marketplace_info(self):
         self._console.write(getattr(self, '_do_marketplace_info').__doc__)
-        self._console.write(f"{os.linesep}Usage: marketplace info <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(f"{os.linesep}Usage: marketplace info <path>|<prefix>|<all>{os.linesep}")
 
     def _help_marketplace_install(self):
         self._console.write(getattr(self, '_do_marketplace_install').__doc__)
-        self._console.write(f"{os.linesep}Usage: marketplace install <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(f"{os.linesep}Usage: marketplace install <path>|<prefix>|<all>{os.linesep}")
 
     def _help_marketplace_remove(self):
         self._console.write(getattr(self, '_do_marketplace_remove').__doc__)
-        self._console.write(f"{os.linesep}Usage: marketplace remove <<path>|<prefix>|all>{os.linesep}")
+        self._console.write(f"{os.linesep}Usage: marketplace remove <path>|<prefix>|<all>{os.linesep}")
 
     def help_workspaces(self):
         self._console.write(getattr(self, 'do_workspaces').__doc__)

@@ -26,7 +26,6 @@ class ModuleMetadata:
         description: A description of the module and the functionality it provides
         comments: List of module comments displayed when the "info" command is run
         options: List of module options (ModuleOption instances)
-        files: A list of modules files TODO
         dependencies: A list of Python packages that this module depends on
         query: A default database query that populates the input data the module runs against
         required_keys: A list of API keys that this modules needs in order to run
@@ -39,7 +38,6 @@ class ModuleMetadata:
     authors: list = field(default_factory=list)
     comments: list = field(default_factory=list)
     options: list = field(default_factory=list)
-    files: list = field(default_factory=list)
     dependencies: list = field(default_factory=list)
     query: str = None
     required_keys: list = field(default_factory=list)

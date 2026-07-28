@@ -80,6 +80,20 @@ class ConsoleOutput:
         if self._spool_dest:
             self.spool_to_file(line)
 
+    def read(self, prompt, default=None):
+        '''
+        Reads input from the user
+        '''
+        prompt = prompt.rstrip(" ")
+        self.write(f"{colors.COLOR_B}[*]{colors.COLOR_N} {prompt}", end="")
+        content = input(" ") # Note: This is required! otherwise it's possible to delete the prompt
+
+        # check Default
+        if default is not None and not content:
+            content = default
+
+        return content
+
     # =====================================================================================
     # Spooling Functions
     # =====================================================================================
@@ -244,7 +258,7 @@ class ConsoleOutput:
         :param line: The message/data to print
         :type line: str
         '''
-        self.write(f"{colors.COLOR_G_BOLD}[*]{colors.COLOR_N} {line}")
+        self.write(f"{colors.COLOR_O}[*]{colors.COLOR_N} {line}")
 
     def verbose(self, line):
         '''

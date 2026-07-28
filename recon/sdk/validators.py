@@ -25,15 +25,19 @@ class AbsValidator:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, recon=None):
+    def __init__(self, recon=None, module=None):
         '''
         Constructor
 
         :param recon: The Recon-NGX app instance, if available
         :type recon: ReconNGXApp
+        :param module: If validation is being performed for a Module, this should be the Module for which the validation
+            is being performed
+        :type module: BaseModule, Optional
         '''
         self._error = None
         self._recon = recon
+        self._module = module
 
     def validate(self, data):
         '''
@@ -169,9 +173,12 @@ class ValidFileValidator(AbsValidator):
         if path.startswith("/") and os.path.isfile(path):
             return True
         else:
-            # Check: Data Relative Path and Standard Relative Path
-            rel_data_path = os.path.join(self._recon.get_data_path(), path)
-            if os.path.isfile(rel_data_path) or os.path.isfile(path):
+            # Check: Module Relative Path and Standard Relative Path
+            if self._module:
+                rel_path = os.path.join(self._module.get_package_path(), path)
+                if os.path.isfile(rel_path):
+                    return True
+            if os.path.isfile(path):
                 return True
 
         self._error = "The specified path does not point to a valid, existing file"

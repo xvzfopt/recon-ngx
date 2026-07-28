@@ -66,7 +66,14 @@ class BaseInterpreter(Cmd):
         '''
         self.print_banner()
         self._status = self.STATUS_RUNNING
-        self.cmdloop()
+        while True:
+            try:
+                self.cmdloop()
+            except KeyboardInterrupt:
+                self._console.write("")
+                self._console.alert("Use the 'exit' command to quit")
+                continue
+            break
 
     def print_banner(self):
         '''
@@ -132,9 +139,13 @@ class BaseInterpreter(Cmd):
 
         # Input: Handle EOF when execution script files: Reset stdin
         if line == 'EOF':
-            sys.stdin = sys.__stdin__
-            self._recon.finish_script_execution()
-            return
+            if self._recon.is_running_script():
+                sys.stdin = sys.__stdin__
+                self._recon.finish_script_execution()
+                return
+            # Ctrl + D
+            else:
+                raise KeyboardInterrupt()
 
         # Find target function
         try:
@@ -165,8 +176,7 @@ class BaseInterpreter(Cmd):
     # =====================================================================================
     def do_exit(self, params):
         '''Exists the Framework'''
-        self._status = self.STATUS_EXITED
-        return True
+        sys.exit()
 
     def do_back(self, params):
         '''Exits the current context'''

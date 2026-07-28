@@ -15,45 +15,42 @@ numerous Quality-of-Life fixes, improvements and additions which pave the way fo
 and expansion.
 
 ## :shield: Project Goals
-The goal of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem by 
-making it easier to maintain, extend and modernise.
+The purpose of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem.
 
 **Key goals include:**
 * Improved maintainability and extensibility
 * Cleaner separation of responsibilities between components
 * Better long-term developer experience
 * Improved reliability and error handling
-* Preservation of compatibility with existing modules and workflows, where possible
 * Fixes and reliability improvements to existing modules
-* Creation of additional modules
+* Creation of additional modules, utilising the latest OSINT sources and techiques
 * Expansion of the module SDK to enhance module effectiveness and allow for development of more complex modules
-* Automatic dependency installation
 
 ## :gear: Features & Improvements
 **Current Improvements include:**
-* Complete rearchitecture of core framework
-* Decoupling and abstraction of internal systems into separate components
-* Improved and optimised error handling and messaging
-* Improved module validation process
-* Refactoring and expansion of obtuse/minified code to improve readability and maintainability
-* Expanded and improved code documentation 
+* :white_check_mark: Complete rearchitecture of core framework
+* :white_check_mark: Decoupling and abstraction of internal systems into separate components
+* :white_check_mark: Improved and optimised error handling and messaging
+* :white_check_mark: Improved module validation process
+* :white_check_mark: Refactoring and expansion of obtuse/minified code to improve readability and maintainability
+* :white_check_mark: Expanded and improved code documentation 
+* :white_check_mark: Automatic dependency installation
+* :white_check_mark: Conversion to package-based modules
 
 Additional improvements and architectural changes are ongoing as development continues.
 
 ## :round_pushpin: Current Status
 Recon-NGX is currently under active development, and should not be considered production-ready
-at this stage. While close to an initial release with much of the refactoring work already done, 
-it is not yet feature-complete and work is still ongoing.
+at this stage. While transformation of the main app is now complete, the conversion of Modules for 
+compatibility is ongoing.
 
 **Current Areas of Focus:**
-* Module SDK
-* Stabilising compatibility with existing recon-ng modules
 * Reviewing and modernising old or unreliable modules
 
 ## :alembic: Roadmap & Upcoming Features
-* Initial v1.0.0 release, with conversion to the new framework complete
-* Automatic module dependency installation
 * Creation of a Graphical User Interface
+* Extensive expansion of modules to include new OSINT sources
+* Integration with AI Chat Tools
 
 ## :warning: Relationship to recon-ng
 While Recon-NGX builds upon the ideas and code of recon-ng, it is an independent 
