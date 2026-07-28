@@ -15,17 +15,15 @@ numerous Quality-of-Life fixes, improvements and additions which pave the way fo
 and expansion.
 
 ## :shield: Project Goals
-The goal of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem by 
-making it easier to maintain, extend and modernise.
+The purpose of Recon-NGX is to breathe new life into an essential tool within the OSINT ecosystem.
 
 **Key goals include:**
 * Improved maintainability and extensibility
 * Cleaner separation of responsibilities between components
 * Better long-term developer experience
 * Improved reliability and error handling
-* Preservation of compatibility with existing modules and workflows, where possible
 * Fixes and reliability improvements to existing modules
-* Creation of additional modules
+* Creation of additional modules, utilising the latest OSINT sources and techiques
 * Expansion of the module SDK to enhance module effectiveness and allow for development of more complex modules
 
 ## :gear: Features & Improvements
@@ -36,8 +34,8 @@ making it easier to maintain, extend and modernise.
 * :white_check_mark: Improved module validation process
 * :white_check_mark: Refactoring and expansion of obtuse/minified code to improve readability and maintainability
 * :white_check_mark: Expanded and improved code documentation 
-* :white_check_mark: Automatic Dependency Installation
-* :white_check_mark: Package-based Modules
+* :white_check_mark: Automatic dependency installation
+* :white_check_mark: Conversion to package-based modules
 
 Additional improvements and architectural changes are ongoing as development continues.
 
@@ -50,9 +48,9 @@ compatibility is ongoing.
 * Reviewing and modernising old or unreliable modules
 
 ## :alembic: Roadmap & Upcoming Features
-* Review, update and QoL improvements for Modules
-* Automatic module dependency installation
 * Creation of a Graphical User Interface
+* Extensive expansion of modules to include new OSINT sources
+* Integration with AI Chat Tools
 
 ## :warning: Relationship to recon-ng
 While Recon-NGX builds upon the ideas and code of recon-ng, it is an independent 
