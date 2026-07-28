@@ -405,7 +405,10 @@ class FrameworkInterpreter(BaseInterpreter):
         :rtype: list
         '''
         mm = self._recon.get_module_manager()
-        return [x['path'] for x in mm.get_module_index() if x['status'] == mm.MODULE_STATUS_INSTALLED and x['path'].startswith(text)]
+        modules = [x['path'] for x in mm.get_module_index() if x['status'] in
+                   [mm.MODULE_STATUS_INSTALLED, mm.MODULE_STATUS_OUTDATED, mm.MODULE_STATUS_DISABLED]
+                   and x['path'].startswith(text)]
+        return modules
 
     # =====================================================================================
     # Auto-completion Functions: workspaces
