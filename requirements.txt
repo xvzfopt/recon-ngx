@@ -13,3 +13,4 @@ XlsxWriter
 unicodecsv
 rq
 requests
+tqdm
