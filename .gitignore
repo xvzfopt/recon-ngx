@@ -9,3 +9,6 @@ scripts/
 
 # Test/Tmp Files
 test/tmp/
+
+# Modules Development
+test/modules_dev
