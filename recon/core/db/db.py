@@ -87,6 +87,16 @@ class ReconNGXDatabase:
         query = "DELETE FROM '%s' WHERE ROWID IS %s" % (table, row_id)
         return self.query(query)
 
+    def clear_table(self, table):
+        '''
+        Clears a table of all entries
+
+        :param table: The name of the table to clear
+        :type table: str
+        '''
+        query = f"DELETE FROM {table}"
+        return self.query(query)
+
     # =====================================================================================
     # Getters
     # =====================================================================================
