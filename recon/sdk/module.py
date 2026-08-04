@@ -246,6 +246,19 @@ class BaseModule:
         '''
         self.__get_console().verbose(line)
 
+    def read(self, prompt, default=None):
+        '''
+        Reads input from the user via the console
+
+        :param prompt: The prompt to present to the user
+        :type prompt: str
+        :param default: The default value to return if no input is provided. Defaults to None
+        :type default: any, Optional
+        :returns: The input entered by the user
+        :type: str
+        '''
+        return self.__recon.read_input(prompt, default)
+
     def debug(self, line):
         '''
         Formats and prints output if in debug mode

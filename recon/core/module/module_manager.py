@@ -351,7 +351,7 @@ class ModuleManager:
 
                 choice = ""
                 while choice not in ["y", "n"]:
-                    choice = self._console.read("Install dependencies now? (Y/n):", default="y")
+                    choice = self._framework.read_input("Install dependencies now? (Y/n):", default="y")
 
                 if choice == "n":
                     self._console.output("Skipping module installation")
@@ -396,7 +396,7 @@ class ModuleManager:
         for dependency in dependencies:
             choice = ""
             while choice not in ["y", "n"]:
-               choice = self._console.read(
+               choice = self._framework.read_input(
                    f"Uninstall dependency '{self._dep_manager.package_name_from_specifier(dependency)}'? (y/N):",
                    default="n"
                )
