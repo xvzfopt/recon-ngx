@@ -145,7 +145,11 @@ class ModuleManager:
         :param module: The module to reload
         :type module: BaseModule
         '''
-        return self._load_package_module(module.get_package_path(), True)
+        # Store Options
+        options = module.get_options()
+        success, reloaded_module = self._load_package_module(module.get_package_path(), True)
+        reloaded_module.set_options(options)
+        return success, reloaded_module
 
     def load_modules(self):
         '''

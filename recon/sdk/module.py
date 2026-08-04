@@ -825,7 +825,7 @@ class BaseModule:
         :return: The current Database instance for the active Workspace
         :rtype: WorkspaceDB
         '''
-        return self._db
+        return self.__db
 
     def get_progress_bar(self, total=100, description="", unit="item"):
         '''
@@ -844,6 +844,20 @@ class BaseModule:
         :rtype: ConsoleOutput
         '''
         return self.__console
+
+    # =====================================================================================
+    # Setters
+    # =====================================================================================
+    def set_options(self, options):
+        '''
+        Sets the Module's Options instance.
+        Note: This is only intended for use by the ModuleManager, for saving and restoring the module's options
+        when a module is being reloaded
+
+        :param options: The Options instance
+        :type options: dict
+        '''
+        self.__options = options
 
     # =====================================================================================
     # Internal Functions
