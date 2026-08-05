@@ -470,6 +470,30 @@ class BaseInterpreter(Cmd):
             count += db.delete_row(table, id)
         self._console.output("%s row(s) affected" % count)
 
+    def _do_db_cleartable(self, params):
+        '''Clears the table of all entries'''
+
+        # Parse Table and row data
+        table, params = self._parse_params(params)
+        if not table:
+            self._help_db_cleartable()
+            return
+
+        # Get Database
+        workspace = self._recon.get_current_workspace()
+        db = workspace.get_db()
+
+        # Check table
+        if not db.is_valid_table(table):
+            self._console.output("Invalid table name.")
+            return
+
+        # =====================================================================================
+        # Perform Clear Operation
+        # =====================================================================================
+        count = db.clear_table(table)
+        self._console.output(f"{count} row(s) were deleted")
+
     def _do_db_notes(self, params):
         '''Adds notes to rows in the database'''
         row_ids = []
@@ -1101,7 +1125,7 @@ class BaseInterpreter(Cmd):
         db = workspace.get_db()
         return [x for x in sorted(db.get_tables()) if x.startswith(text)]
     # Auto-complete db "notes" and "delete" in same way as insert
-    _complete_db_notes = _complete_db_delete = _complete_db_insert
+    _complete_db_notes = _complete_db_delete = _complete_db_cleartable = _complete_db_insert
 
     def _complete_db_query(self, text, *ignored):
         '''
@@ -1334,6 +1358,10 @@ class BaseInterpreter(Cmd):
         self._console.write(getattr(self, '_do_db_delete').__doc__)
         self._console.write(f"{os.linesep}Usage: db delete <table> [<rowid(s)>]{os.linesep}")
         self._console.write(f"rowid(s) => ',' delimited values or '-' delimited ranges representing rowids{os.linesep}")
+
+    def _help_db_cleartable(self):
+        self._console.write(getattr(self, '_do_db_cleartable').__doc__)
+        self._console.write(f"{os.linesep}Usage: db cleartable <table>{os.linesep}")
 
     def _help_db_notes(self):
         self._console.write(getattr(self, '_do_db_notes').__doc__)

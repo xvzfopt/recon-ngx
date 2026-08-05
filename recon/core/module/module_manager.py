@@ -32,7 +32,7 @@ class ModuleManager:
     # =====================================================================================
     # Properties
     # =====================================================================================
-    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/develop'
+    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/master'
 
     MODULE_STATUS_UNINSTALLED   = "Uninstalled"
     MODULE_STATUS_INSTALLED     = "Installed"
@@ -145,7 +145,11 @@ class ModuleManager:
         :param module: The module to reload
         :type module: BaseModule
         '''
-        return self._load_package_module(module.get_package_path(), True)
+        # Store Options
+        options = module.get_options()
+        success, reloaded_module = self._load_package_module(module.get_package_path(), True)
+        reloaded_module.set_options(options)
+        return success, reloaded_module
 
     def load_modules(self):
         '''
@@ -351,7 +355,7 @@ class ModuleManager:
 
                 choice = ""
                 while choice not in ["y", "n"]:
-                    choice = self._console.read("Install dependencies now? (Y/n):", default="y")
+                    choice = self._framework.read_input("Install dependencies now? (Y/n):", default="y")
 
                 if choice == "n":
                     self._console.output("Skipping module installation")
@@ -396,7 +400,7 @@ class ModuleManager:
         for dependency in dependencies:
             choice = ""
             while choice not in ["y", "n"]:
-               choice = self._console.read(
+               choice = self._framework.read_input(
                    f"Uninstall dependency '{self._dep_manager.package_name_from_specifier(dependency)}'? (y/N):",
                    default="n"
                )

@@ -32,10 +32,11 @@ class KeyManager:
         '''
         self._console = console
         self._home_path = home_path
-        self._db_path = os.path.join(self._home_path, self.KEYS_DB_FILENAME)
+        self._db_path = None
+        self._db = None
 
         # Initialise Keys Database
-        self._db = KeysDB(self._db_path, self._console)
+        self.initialise_db(os.path.join(self._home_path, self.KEYS_DB_FILENAME))
 
     def add_key(self, name, value):
         '''
@@ -137,6 +138,16 @@ class KeyManager:
         :rtype: bool
         '''
         return name in self.get_key_names()
+
+    def initialise_db(self, path):
+        '''
+        Initialises the Keys Database
+
+        :param path: The path to the new keys Database
+        :type path: str
+        '''
+        self._db_path = path
+        self._db = KeysDB(self._db_path, self._console)
 
     # =====================================================================================
     # Internal Helpers

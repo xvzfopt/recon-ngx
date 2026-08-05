@@ -268,6 +268,27 @@ class ReconNGXApp:
         open(path, 'w').close()
         self._script_path = path
 
+    def read_input(self, prompt, default=None):
+        '''
+        Reads input from the user via the console. This is really just an override for the Console
+        read() function, but enables us to also record input
+
+        :param prompt: The prompt to present to the user
+        :type prompt: str
+        :param default: The default value to return if no input is provided. Defaults to None
+        :type default: any, Optional
+        :returns: The input entered by the user
+        :type: str
+        '''
+        content = self._console.read(prompt, default, self.is_running_script())
+
+        # Check if recording
+        if self.is_recording():
+            with open(self.get_script_path(), "a") as script_file:
+                script_file.write(f"{content}{os.linesep}")
+
+        return content
+
     # =====================================================================================
     # Getters
     # =====================================================================================

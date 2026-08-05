@@ -57,7 +57,10 @@ class AbsValidator:
         '''
         return self._error
 
-class ProtocolHTTPSValidator(AbsValidator):
+# =====================================================================================
+# HTTP Protocol Validator Class
+# =====================================================================================
+class ProtocolHTTPValidator(AbsValidator):
     '''
     HTTPS Protocol Validator. Validates that the supplied data is a valid HTTP protocol
     '''
@@ -118,6 +121,38 @@ class BooleanValidator(AbsValidator):
         self._error = "Not a valid boolean value"
         return False
 
+# =====================================================================================
+# Integer Validator Class
+# =====================================================================================
+class IntegerValidator(AbsValidator):
+    '''
+    Integer Validator. Validates that the supplied data is an integer value
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def validate(self, data):
+        '''
+        Checks if the specified data is an integer
+
+        :param data: The data to check
+        :type data: str
+        :returns: True if data is an integer, otherwise False
+        :rtype: bool
+        '''
+
+        # Test Data Type
+        if not isinstance(data, int):
+            self._error = "Not an integer"
+            return False
+
+        return True
+
+
+# =====================================================================================
+# Number Validator Class
+# =====================================================================================
 class NumberValidator(AbsValidator):
     '''
     Number Validator. Validates that the supplied data is a number
@@ -137,9 +172,7 @@ class NumberValidator(AbsValidator):
         '''
 
         # Test Data Type
-        try:
-            data = int(data)
-        except ValueError:
+        if not isinstance(data, int) and not isinstance(data, float):
             self._error = "Not a number"
             return False
 
@@ -184,6 +217,9 @@ class ValidFileValidator(AbsValidator):
         self._error = "The specified path does not point to a valid, existing file"
         return False
 
+# =====================================================================================
+# Port Number Validator Class
+# =====================================================================================
 class PortNumberValidator(AbsValidator):
     '''
     Port Number Validator. Validates that the supplied data is a valid port number

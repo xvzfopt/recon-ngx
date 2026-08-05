@@ -80,13 +80,21 @@ class ConsoleOutput:
         if self._spool_dest:
             self.spool_to_file(line)
 
-    def read(self, prompt, default=None):
+    def read(self, prompt, default=None, running_script=False):
         '''
         Reads input from the user
         '''
         prompt = prompt.rstrip(" ")
         self.write(f"{colors.COLOR_B}[*]{colors.COLOR_N} {prompt}", end="")
         content = input(" ") # Note: This is required! otherwise it's possible to delete the prompt
+
+        # Spool
+        if self._spool_dest:
+            self.spool_to_file(" " + content + "\n")
+
+        # Check if Running Script
+        if running_script and len(content) > 0:
+            self.write(content)
 
         # check Default
         if default is not None and not content:
@@ -99,7 +107,7 @@ class ConsoleOutput:
     # =====================================================================================
     def spool_to_file(self, line):
         with open(self._spool_dest, "a") as spool_file:
-            spool_file.write(line)
+            spool_file.write(utils.ansi_clean(line))
 
     def enable_spooling(self, path):
         '''

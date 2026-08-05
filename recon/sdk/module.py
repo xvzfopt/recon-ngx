@@ -246,6 +246,19 @@ class BaseModule:
         '''
         self.__get_console().verbose(line)
 
+    def read(self, prompt, default=None):
+        '''
+        Reads input from the user via the console
+
+        :param prompt: The prompt to present to the user
+        :type prompt: str
+        :param default: The default value to return if no input is provided. Defaults to None
+        :type default: any, Optional
+        :returns: The input entered by the user
+        :type: str
+        '''
+        return self.__recon.read_input(prompt, default)
+
     def debug(self, line):
         '''
         Formats and prints output if in debug mode
@@ -515,8 +528,8 @@ class BaseModule:
         '''
         return self.__get_db().insert_ports(ip_address, host, port, protocol, banner, notes, mute)
 
-    def insert_hosts(self, host=None, ip_address=None, region=None, country=None, latitude=None, longitude=None,
-                     notes=None, mute=False):
+    def insert_hosts(self, host=None, ip_address=None, region=None, country=None, city=None, latitude=None,
+                     longitude=None, notes=None, mute=False):
         '''
         Adds a host to the Workspace Database
 
@@ -528,6 +541,8 @@ class BaseModule:
         :type region: str
         :param country: The country in which the host is located
         :type country: str
+        :param city: The city in which the host is located
+        :type city: str
         :param latitude: The latitude where the host is located
         :type latitude: str
         :param longitude: The longitude where the host is located
@@ -537,7 +552,7 @@ class BaseModule:
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self.__get_db().insert_hosts(host, ip_address, region, country, latitude, longitude, notes, mute)
+        return self.__get_db().insert_hosts(host, ip_address, region, country, city, latitude, longitude, notes, mute)
 
     def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None,
                         country=None, phone=None, notes=None, mute=False):
@@ -812,7 +827,7 @@ class BaseModule:
         :return: The current Database instance for the active Workspace
         :rtype: WorkspaceDB
         '''
-        return self._db
+        return self.__db
 
     def get_progress_bar(self, total=100, description="", unit="item"):
         '''
@@ -831,6 +846,20 @@ class BaseModule:
         :rtype: ConsoleOutput
         '''
         return self.__console
+
+    # =====================================================================================
+    # Setters
+    # =====================================================================================
+    def set_options(self, options):
+        '''
+        Sets the Module's Options instance.
+        Note: This is only intended for use by the ModuleManager, for saving and restoring the module's options
+        when a module is being reloaded
+
+        :param options: The Options instance
+        :type options: dict
+        '''
+        self.__options = options
 
     # =====================================================================================
     # Internal Functions
