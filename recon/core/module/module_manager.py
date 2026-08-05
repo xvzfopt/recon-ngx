@@ -32,7 +32,7 @@ class ModuleManager:
     # =====================================================================================
     # Properties
     # =====================================================================================
-    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/develop'
+    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/master'
 
     MODULE_STATUS_UNINSTALLED   = "Uninstalled"
     MODULE_STATUS_INSTALLED     = "Installed"
