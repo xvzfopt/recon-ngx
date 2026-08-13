@@ -32,7 +32,7 @@ class ModuleManager:
     # =====================================================================================
     # Properties
     # =====================================================================================
-    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace/master'
+    URL_MARKETPLACE = 'https://raw.githubusercontent.com/xvzfopt/recon-ngx-marketplace'
 
     MODULE_STATUS_UNINSTALLED   = "Uninstalled"
     MODULE_STATUS_INSTALLED     = "Installed"
@@ -42,7 +42,7 @@ class ModuleManager:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, home_path, modules_path, console, framework):
+    def __init__(self, home_path, modules_path, console, framework, marketplace_branch):
         '''
         Constructor
 
@@ -52,12 +52,15 @@ class ModuleManager:
         :type modules_path: str
         :param console: Console Output Instance
         :type console: ConsoleOutput
+        :param marketplace_branch: The Marketplace Branch to use
+        :type marketplace_branch
         '''
         self._console = console
         self._module_index = []
         self._loaded_modules = {}
         self._module_categories = {}
         self._framework = framework
+        self._marketplace_branch = marketplace_branch
 
         # Build Paths
         self._home_path = home_path
@@ -76,7 +79,7 @@ class ModuleManager:
         '''
         Fetches the Modules index from the Marketplace
         '''
-        url = self.URL_MARKETPLACE + "/modules.yml"
+        url = self.get_marketplace_url() + "/modules.yml"
         self._console.debug("Fetching Marketplace Index => %s" % url)
         file_dest = os.path.join(self._home_path, "modules.yml")
 
@@ -421,6 +424,15 @@ class ModuleManager:
     # =====================================================================================
     # Getters
     # =====================================================================================
+    def get_marketplace_url(self):
+        '''
+        Gets the Recon-NGX Marketplace URL
+
+        :returns: The Recon-NGX Marketplace URL
+        :rtype:
+        '''
+        return self.URL_MARKETPLACE + f"/{self._marketplace_branch}"
+
     def get_modules_path(self):
         '''
         Gets the path to the modules directory
@@ -557,7 +569,7 @@ class ModuleManager:
         :rtype: str
         '''
         success = False
-        url = self.URL_MARKETPLACE + "/%s" % target_file
+        url = self.get_marketplace_url() + "/%s" % target_file
         self._console.debug("Fetching Marketplace file --> %s" % url)
 
         # Fetch File
@@ -613,24 +625,3 @@ class ModuleManager:
             index.append(module_data)
 
         return index
-
-# =====================================================================================
-# Testbed
-# =====================================================================================
-if __name__ == '__main__':
-    from recon.core.options import Options
-    from recon.core.output import ConsoleOutput
-    from recon.utils import utils
-
-    options = Options()
-    options.initialise_global_options("0.1.0")
-    options["verbosity"] = 2
-    co = ConsoleOutput(options)
-
-    home_path = os.path.join(os.getcwd(), "test/tmp")
-    mm = ModuleManager(home_path, co)
-    mm.fetch_marketplace_index()
-    mm.load_modules()
-
-    print(mm._loaded_modules)
-    print(mm._module_categories)

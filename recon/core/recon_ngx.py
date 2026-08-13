@@ -38,7 +38,8 @@ class ReconNGXApp:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible, modules_path) :
+    def __init__(self, version, author, verbosity, check_version, marketplace_enabled, accessible, modules_path,
+                 marketplace_branch) :
         '''
         Recon-NGX Core App Consructor
 
@@ -54,6 +55,8 @@ class ReconNGXApp:
         :type marketplace_enabled: bool
         :param modules_path: A modules path override to load modules from a custom directory
         :type modules_path: str
+        :param marketplace_branch: The branch to use for the module marketplace
+        :type marketplace_branch: str
         '''
         super(ReconNGXApp, self).__init__()
 
@@ -86,24 +89,32 @@ class ReconNGXApp:
         self._modules_path      = os.path.join(self._home_path, "modules")
         self._workspaces_path   = os.path.join(self._home_path, "workspaces")
 
-        # Check for Modules Path override
+        # =====================================================================================
+        # Validate Arguments
+        # =====================================================================================
+        # Check Modules Path
         if modules_path:
             if not os.path.isdir(modules_path):
                 self._console.error("Invalid modules path specified: '%s'. Check that this is a valid directory" % modules_path)
                 sys.exit(1)
             self._modules_path = modules_path
 
-        # Validate Parameters
+        # Check Verbosity
         if verbosity not in [0, 1, 2]:
             self._console.error("Invalid verbosity level: '%s'. Must be 0, 1, or 2." % verbosity)
             sys.exit(1)
         self.set_verbosity(verbosity)
 
+        # Check Marketplace Branch
+        if marketplace_branch not in ["develop", "master"]:
+            self._console.error(f"Invalid Marketplace branch specified: '{marketplace_branch}'")
+            sys.exit(1)
+
         # Initialise App Home
         self._init_home_dir()
 
         # Initialise Module Manager
-        self._module_manager = ModuleManager(self._home_path, self._modules_path, self._console, self)
+        self._module_manager = ModuleManager(self._home_path, self._modules_path, self._console, self, marketplace_branch)
         if self.is_marketplace_enabled():
             self._module_manager.fetch_marketplace_index()
 
