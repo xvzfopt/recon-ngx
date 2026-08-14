@@ -146,7 +146,7 @@ class WorkspaceDB(ReconNGXDatabase):
         return rowcount
 
     def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None,
-                               status=None, notes=None, mute=False):
+                               status=None, cvss=None, notes=None, mute=False):
         '''
         Adds a vulnerability to the database and returns the affected row count.
 
@@ -162,6 +162,8 @@ class WorkspaceDB(ReconNGXDatabase):
         :type category: str
         :param status: A vulnerability status
         :type status: str
+        :param cvss: The vulnerability CVSS score
+        :type cvss: str
         :param notes: Any additional notes
         :type notes: str
         :param mute: Whether the table should be displayed after row insertion
@@ -184,6 +186,7 @@ class WorkspaceDB(ReconNGXDatabase):
             publish_date = publish_date.strftime(self.DATE_FORMAT) if publish_date else None,
             category = category,
             status = status,
+            cvss = cvss,
             notes = notes
         )
 
@@ -755,6 +758,9 @@ class WorkspaceDB(ReconNGXDatabase):
             self.query('DROP TABLE hosts')
             self.query('CREATE TABLE IF NOT EXISTS hosts (host TEXT, ip_address TEXT, region TEXT, country TEXT, city TEXT, latitude TEXT, longitude TEXT, notes TEXT, module TEXT)')
             self.query('PRAGMA user_version = 12')
+        if db_version(self) == 12:
+            self.query('ALTER TABLE vulnerabilities ADD COLUMN cvss FLOAT')
+            self.query('PRAGMA user_version = 13')
         if db_orig != db_version(self):
             self._console.alert(f"Database upgraded to version {db_version(self)}.")
 
