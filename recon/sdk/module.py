@@ -484,7 +484,7 @@ class BaseModule:
         return self.__get_db().insert_locations(latitude, longitude, street_address, notes, mute)
 
     def insert_vulnerabilities(self, host=None, reference=None, example=None, publish_date=None, category=None,
-                               status=None, notes=None, mute=False):
+                               status=None, cvss=None, notes=None, mute=False):
         '''
         Adds a vulnerability to the database and returns the affected row count.
 
@@ -500,12 +500,14 @@ class BaseModule:
         :type category: str
         :param status: A vulnerability status
         :type status: str
+        :param cvss: The vulnerability CVSS score
+        :type cvss: float
         :param notes: Any additional notes
         :type notes: str
         :param mute: Whether the table should be displayed after row insertion
         :type mute: bool
         '''
-        return self.__get_db().insert_vulnerabilities(host, reference, example, publish_date, category, status, notes, mute)
+        return self.__get_db().insert_vulnerabilities(host, reference, example, publish_date, category, status, cvss, notes, mute)
 
     def insert_ports(self, ip_address=None, host=None, port=None, protocol=None, banner=None, notes=None, mute=False):
         '''
