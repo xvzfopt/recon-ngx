@@ -484,7 +484,7 @@ class WorkspaceDB(ReconNGXDatabase):
         '''
 
         # Process time/date
-        if time:
+        if time and not isinstance(time, datetime):
             try:
                 time = date_parser.parse(time)
             except ParserError:
