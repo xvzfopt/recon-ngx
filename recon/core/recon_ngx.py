@@ -228,9 +228,8 @@ class ReconNGXApp:
 
         # Perform any option validation
         if options.validators.get(option_name):
-            for validator_class in options.validators[option_name]:
-                validator = validator_class(self, module)
-                if not validator.validate(options[option_name]):
+            for validator in options.validators[option_name]:
+                if not validator.validate(options[option_name], module):
                     raise ModuleValidationException(f"Validation failed for the '{option_name}' option => %s" % validator.get_error())
 
     def execute_script(self, path):
