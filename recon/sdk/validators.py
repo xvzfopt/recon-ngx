@@ -25,7 +25,7 @@ class AbsValidator:
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def __init__(self, recon=None, module=None):
+    def __init__(self):
         '''
         Constructor
 
@@ -36,15 +36,15 @@ class AbsValidator:
         :type module: BaseModule, Optional
         '''
         self._error = None
-        self._recon = recon
-        self._module = module
 
-    def validate(self, data):
+    def validate(self, data, module=None):
         '''
         Performs the validation
 
         :param data: The data to validate`
         :type data: Any
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         '''
         raise NotImplementedError("Validator classes must implement the validate() method")
 
@@ -68,12 +68,14 @@ class ProtocolHTTPValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, value):
+    def validate(self, value, module=None):
         '''
         Checks if the specified value is a valid HTTP protocol
 
         :param value: The value to check
         :type value: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if value is a HTTP protocol value, otherwise False
         :rtype
         '''
@@ -97,12 +99,14 @@ class BooleanValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, value):
+    def validate(self, value, module=None):
         '''
         Checks if the specified value is a valid boolean value
 
         :param value: The value to check
         :type value: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if value is a boolean value, otherwise False
         :rtype
         '''
@@ -132,12 +136,14 @@ class IntegerValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, data):
+    def validate(self, data, module=None):
         '''
         Checks if the specified data is an integer
 
         :param data: The data to check
         :type data: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if data is an integer, otherwise False
         :rtype: bool
         '''
@@ -149,6 +155,45 @@ class IntegerValidator(AbsValidator):
 
         return True
 
+# =====================================================================================
+# Choice Validator Class
+# =====================================================================================
+class ChoicesValidator(AbsValidator):
+    '''
+    Choices Validator. Validates that the supplied data exists in a list of supported choices
+    '''
+
+    # =====================================================================================
+    # Functions
+    # =====================================================================================
+    def __init__(self, choices):
+        '''
+        Constructor
+
+        :param choices: The list of allowed choices
+        :type choices: list
+        '''
+        super().__init__()
+        self.__choices = choices
+
+    def validate(self, data, module=None):
+        '''
+        Checks if the specified data is an integer
+
+        :param data: The data to check
+        :type data: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
+        :returns: True if data is an integer, otherwise False
+        :rtype: bool
+        '''
+
+        # Test data presence
+        if data not in self.__choices :
+            self._error = f"The supplied value is not within the list of supported choices: {', '.join(self.__choices)}"
+            return False
+
+        return True
 
 # =====================================================================================
 # Number Validator Class
@@ -161,12 +206,14 @@ class NumberValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, data):
+    def validate(self, data, module=None):
         '''
         Checks if the specified data is a number
 
         :param data: The data to check
         :type data: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if data is a number, otherwise False
         :rtype: bool
         '''
@@ -189,7 +236,7 @@ class ValidFileValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, path):
+    def validate(self, path, module=None):
         '''
         Checks if the specified path points to a valid file. Checks the following:
             1. Absolute path
@@ -198,6 +245,8 @@ class ValidFileValidator(AbsValidator):
 
         :param path: The data to check
         :type path: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if path points to a valid file, otherwise False
         :rtype
         '''
@@ -207,8 +256,8 @@ class ValidFileValidator(AbsValidator):
             return True
         else:
             # Check: Module Relative Path and Standard Relative Path
-            if self._module:
-                rel_path = os.path.join(self._module.get_package_path(), path)
+            if module:
+                rel_path = os.path.join(module.get_package_path(), path)
                 if os.path.isfile(rel_path):
                     return True
             if os.path.isfile(path):
@@ -228,12 +277,14 @@ class PortNumberValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, data):
+    def validate(self, data, module=None):
         '''
         Checks if the specified data is a valid port number
 
         :param data: The data to check
         :type data: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if data is a valid port number, otherwise False
         :rtype: bool
         '''
@@ -262,12 +313,14 @@ class Ipv4AddressValidator(AbsValidator):
     # =====================================================================================
     # Functions
     # =====================================================================================
-    def validate(self, data):
+    def validate(self, data, module=None):
         '''
         Checks if the specified data is a valid IPv4 address
 
         :param data: The data to check
         :type data: str
+        :param module: If validation is being performed on behalf of a Module, this should be the Module instance
+        :type module: BaseModule, Optional
         :returns: True if data is a valid IPv4 address, otherwise False
         :rtype
         '''
