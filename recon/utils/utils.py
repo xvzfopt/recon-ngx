@@ -366,10 +366,15 @@ def load_module_meta(path):
     '''
 
     # Get Module spec
-    spec = importlib.util.spec_from_file_location("meta", "%s/meta.py" % path)
+    spec = importlib.util.spec_from_file_location(
+        "meta",
+        "%s/meta.py" % path,
+        submodule_search_locations=[path]
+    )
 
     # Import meta module
     meta_module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = meta_module
     spec.loader.exec_module(meta_module)
 
     return meta_module.meta
