@@ -239,7 +239,7 @@ class BaseInterpreter(Cmd):
                 self._help_useragent_list()
                 return
 
-            # Display Table
+        # Display Table
         header, rows = self._user_agents_table(verbose=verbose)
         self._console.table(rows, header)
 
@@ -1569,8 +1569,9 @@ class BaseInterpreter(Cmd):
         :rtype: list
         '''
         subcommands = []
+        pattern = re.compile(r"_do_%s_[^_]+$" % command)
         for method in dir(self):
-            if "_do_%s_" % command in method:
+            if pattern.match(method):
                 subcommands.append(method.split("_")[-1])
         return subcommands
 
