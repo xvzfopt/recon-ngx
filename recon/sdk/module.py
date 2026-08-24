@@ -8,6 +8,7 @@ Contains The BaseModule class that all Recon-NGX Modules should inherit from.
 # Imports: External
 # =====================================================================================
 import http.cookiejar
+import html
 import os.path
 import requests
 import inspect
@@ -303,7 +304,7 @@ class BaseModule:
         :return: The unescaped string
         :rtype: str
         '''
-        return utils.html_unescape(s)
+        return html.unescape()
 
     def html_escape(self, s):
         '''
@@ -314,7 +315,7 @@ class BaseModule:
         :return: The escaped string
         :rtype: str
         '''
-        return utils.html_escape(s)
+        return html.escape(s)
 
     def cidr_to_list(self, string):
         '''

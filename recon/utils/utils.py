@@ -201,35 +201,6 @@ def print_http_response(response, console):
     if response.content:
         print(f"body:   {response.content}")
 
-def html_escape(s):
-    '''
-    Escapes HTML characters in the specified content
-
-    :param s: The string to escape
-    :type s: str
-    :return: The escaped string
-    :rtype: str
-    '''
-    escapes = {
-        '&': '&amp;',
-        '"': '&quot;',
-        "'": '&apos;',
-        '>': '&gt;',
-        '<': '&lt;',
-    }
-    return ''.join(escapes.get(c,c) for c in s)
-
-def html_unescape(s):
-    '''
-    Unescapes HTML markup and returns an unescaped string.
-
-    :param s: The string to unescape
-    :type s: str
-    :return: The unescaped string
-    :rtype: str
-    '''
-    return html.unescape(s)
-
 def hosts_to_domains(hosts, exclusions=[]):
     '''
     Parses a list of "hosts" and extracts all possible domains.
