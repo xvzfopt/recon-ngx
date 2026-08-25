@@ -156,9 +156,14 @@ class ReconNGXApp:
         while True:
             # On KeyboardInterrupt, either go back or exit app
             try:
+                # Check Module Updates
+                if self.get_module_manager().is_outdated(module.get_fqn()):
+                    self._console.alert("An Update is available for this module. Check Marketplace for details")
+                # Start Module Interpreter
                 self._m_interpreter.start()
             except KeyboardInterrupt:
                 print('')
+
 
             # Module Interpreter exited
             if self._m_interpreter.get_status() == ModuleInterpreter.STATUS_EXITED:
