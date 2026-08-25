@@ -509,6 +509,20 @@ class ModuleManager:
                 return True
         return False
 
+    def is_outdated(self, path):
+        '''
+        Checks if the specified module is outdated
+
+        :param path: The module's path
+        :type path: str
+        :returns: True if the module is outdated, False otherwise
+        :rtype: bool
+        '''
+        for module in self.get_module_index():
+            if module['path'] == path and module["status"] == self.MODULE_STATUS_OUTDATED:
+                return True
+        return False
+
     def is_enabled(self, path):
         '''
         Checks if the specified module is enabled
@@ -521,7 +535,6 @@ class ModuleManager:
         if self.is_installed(path):
             return self.get_module_index()[path]["status"] not in (self.MODULE_STATUS_UNINSTALLED, self.MODULE_STATUS_DISABLED)
         return False
-
 
     def find_matching_installed_modules(self, s):
         '''
