@@ -97,6 +97,13 @@ class ReconNGXDatabase:
         query = f"DELETE FROM {table}"
         return self.query(query)
 
+    def clear_tables(self):
+        '''
+        Clears all Database tables. Primarily for unit test purposes. Use with caution!
+        '''
+        for table in self.get_tables():
+            self.clear_table(table)
+
     # =====================================================================================
     # Getters
     # =====================================================================================
