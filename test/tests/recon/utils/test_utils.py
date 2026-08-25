@@ -59,21 +59,3 @@ class TestUtils(AbsTestCase):
         cidr = "192.168.5.59/32"
         ips = utils.cidr_to_list(cidr)
         self.assertEqual(["192.168.5.59"], ips)
-
-    def test_html_escape(self):
-        '''
-        Tests html_escape --> Escaping special characters within HTML content
-        '''
-        content = "This is a < > test & ' \""
-        expected = "This is a &lt; &gt; test &amp; &apos; &quot;"
-        new_content = utils.html_escape(content)
-        self.assertEqual(expected, new_content)
-
-    def test_html_unescape(self):
-        '''
-        Tests html_unescape --> Unescaping special characters within HTML content
-        '''
-        content = "This is a &lt; &gt; test &amp; &apos; &quot;"
-        expected = "This is a < > test & ' \""
-        new_content = utils.html_unescape(content)
-        self.assertEqual(expected, new_content)
