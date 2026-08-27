@@ -364,10 +364,11 @@ class ModuleManager:
                     self._console.output("Skipping module installation")
                     return
 
-            self._console.output("Installing dependencies. Please Wait...")
-            for dependency in missing_dependencies:
-                self._dep_manager.install(dependency)
-                self._console.output("Dependency installed: %s" % dependency)
+                self._console.output("Installing dependencies. Please Wait...")
+
+                for dependency in missing_dependencies:
+                    self._dep_manager.install(dependency)
+                    self._console.output("Dependency installed: %s" % dependency)
 
         # =====================================================================================
         # Download the module

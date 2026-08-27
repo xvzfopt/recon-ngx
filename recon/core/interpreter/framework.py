@@ -144,6 +144,42 @@ class FrameworkInterpreter(BaseInterpreter):
         else:
             self._console.error('Invalid module path.')
 
+    def _do_marketplace_update(self, params):
+        '''Updates outdated modules'''
+
+        # Check module name was specified
+        if not params:
+            self._help_marketplace_update()
+            return
+        target_module = params.split(" ")[0].lower()
+
+        # =====================================================================================
+        # Update Modules
+        # =====================================================================================
+        mm = self._recon.get_module_manager()
+        modules_to_update = []
+        if target_module == "all":
+            self._console.debug("Updating all outdated modules")
+            for module_data in mm.get_module_index():
+                if mm.is_outdated(module_data["path"]):
+                    modules_to_update.append(module_data)
+        else:
+            module_data = mm.get_module_from_index(target_module)
+            if module_data:
+                modules_to_update.append(mm.get_module_from_index(target_module))
+            else:
+                self._console.error("Invalid Module Name")
+                return
+
+        for module_to_update in modules_to_update:
+            self._console.output("Updating Module: %s" % module_to_update["name"])
+            mm.install_module(module_to_update)
+
+        # Reload Modules
+        mm = self._recon.get_module_manager()
+        mm.load_modules()
+
+
     def _do_marketplace_remove(self, params):
         '''Removes marketplace modules from the framework'''
 
@@ -392,7 +428,7 @@ class FrameworkInterpreter(BaseInterpreter):
         mm = self._recon.get_module_manager()
         return [x['path'] for x in mm.get_module_index() if x['path'].startswith(text)]
     # Auto-complete marketplace "install" in same way as info
-    _complete_marketplace_install = _complete_marketplace_info
+    _complete_marketplace_install = _complete_marketplace_update = _complete_marketplace_info
 
     def _complete_marketplace_remove(self, text, *ignored):
         '''
@@ -546,6 +582,10 @@ class FrameworkInterpreter(BaseInterpreter):
     def _help_marketplace_install(self):
         self._console.write(getattr(self, '_do_marketplace_install').__doc__)
         self._console.write(f"{os.linesep}Usage: marketplace install <path>|<prefix>|<all>{os.linesep}")
+
+    def _help_marketplace_update(self):
+        self._console.write(getattr(self, '_do_marketplace_update').__doc__)
+        self._console.write(f"{os.linesep}Usage: marketplace update <path>|<all>{os.linesep}")
 
     def _help_marketplace_remove(self):
         self._console.write(getattr(self, '_do_marketplace_remove').__doc__)

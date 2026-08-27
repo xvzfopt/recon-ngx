@@ -82,3 +82,27 @@ def parse_fullname(fullname):
     lname = names[-1] if len(names) >= 2 else None
 
     return fname, mname, lname
+
+def shodan_identify_protocol(host_data):
+    '''
+    Tries to determine the most appropriate and highest level protocol based on the Shodan result data for a host
+
+    :param host_data: The host data from Shodan
+    :type host_data: dict
+    :returns: The identified protocol
+    :rtype: str
+    '''
+    protocol = host_data.get("transport")
+
+    # Check: HTTP/HTTPS
+    if "http" in host_data:
+        if "ssl" in host_data or host_data["port"] == 443:
+            protocol = "https"
+        else:
+            protocol = "http"
+
+    # Check: SSH
+    elif "ssh" in host_data:
+        protocol = "ssh"
+
+    return protocol
