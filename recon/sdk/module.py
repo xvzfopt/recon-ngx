@@ -763,6 +763,15 @@ class BaseModule:
         '''
         return self.__options
 
+    def get_global_options(self):
+        '''
+        Gets the Global options
+
+        :returns: The global options object
+        :rtype: Options
+        '''
+        return self.__recon.get_options()
+
     def get_option_value(self, option_name, default=None):
         '''
         Gets the value of the specified option
@@ -774,6 +783,21 @@ class BaseModule:
         '''
         value = default
         options = self.get_options()
+        if option_name in options:
+            value = options[option_name]
+        return value
+
+    def get_global_option_value(self, option_name, default=None):
+        '''
+        Gets the value of the specified global option
+
+        :param option_name: The name of the target global option
+        :type option_name: str
+        :param default: A value to be returned if the option does not exist. Defaults to None
+        :type: any, optional
+        '''
+        value = default
+        options = self.get_global_options()
         if option_name in options:
             value = options[option_name]
         return value
