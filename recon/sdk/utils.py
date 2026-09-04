@@ -58,8 +58,11 @@ def parse_fullname(fullname):
         could not be processed, or was not present
     :rtype: tuple
     '''
-    elements = fullname.strip().split(" ")
     names = []
+    elements = []
+
+    if isinstance(fullname, str):
+        elements = fullname.strip().split(" ")
 
     # Process name elements
     for i in range(0,len(elements)):
