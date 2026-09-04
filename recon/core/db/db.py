@@ -233,7 +233,7 @@ class ReconNGXDatabase:
         :rtype: int
         '''
         # set module to the calling module unless the do_add command was used
-        data['module'] = 'user_defined' if '_do_db_insert' in [x[3] for x in inspect.stack()] else self._modulename.split('/')[-1]
+        data['module'] = 'user_defined' if '_do_db_insert' in [x[3] for x in inspect.stack()] else "default"
 
         # sanitize the inputs to remove NoneTypes, blank strings, and zeros
         columns = [x for x in data.keys() if data[x]]
