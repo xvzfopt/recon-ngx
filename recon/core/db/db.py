@@ -270,7 +270,7 @@ class ReconNGXDatabase:
 
         return rowcount
 
-    def _query(self, path, query, values=(), include_header=False):
+    def _query(self, path, query, values=(), include_header=False, include_column_names=False):
         '''
         recon-ngx --> Migrated across from recon-ng
 
@@ -290,9 +290,14 @@ class ReconNGXDatabase:
                 # a rowcount of -1 typically refers to a select statement
                 if cur.rowcount == -1:
                     rows = []
-                    if include_header:
-                        rows.append(tuple([x[0] for x in cur.description]))
-                    rows.extend(cur.fetchall())
+                    if include_column_names:
+                        columns = [x[0] for x in cur.description]
+                        rows = cur.fetchall()
+                        rows = [dict(zip(columns, row)) for row in rows]
+                    else:
+                        if include_header:
+                            rows.append(tuple([x[0] for x in cur.description]))
+                        rows.extend(cur.fetchall())
                     results = rows
                 # a rowcount of 1 == success and 0 == failure
                 else:
