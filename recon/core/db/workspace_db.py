@@ -276,7 +276,7 @@ class WorkspaceDB(ReconNGXDatabase):
         return rowcount
 
     def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None,
-                        country=None, phone=None, notes=None, mute=False):
+                        country=None, city=None, phone=None, notes=None, mute=False):
         '''
         Adds a contact to the Workspace Database
 
@@ -294,6 +294,8 @@ class WorkspaceDB(ReconNGXDatabase):
         :type region: str
         :param country: The country in which the contact is located
         :type country: str
+        :param city: The city in which the contact is located
+        :type city: str
         :param phone: The phone number of the contact
         :type phone: str
         :param notes: Any additional notes
@@ -311,6 +313,7 @@ class WorkspaceDB(ReconNGXDatabase):
             email = email,
             region = region,
             country = country,
+            city = city,
             phone = phone,
             notes = notes
         )
@@ -761,6 +764,21 @@ class WorkspaceDB(ReconNGXDatabase):
         if db_version(self) == 12:
             self.query('ALTER TABLE vulnerabilities ADD COLUMN cvss FLOAT')
             self.query('PRAGMA user_version = 13')
+
+        '''
+        Upgrade Notes: 17 --> 18
+        --------
+        Added "city" column to contacts table
+        '''
+        if db_version(self) == 17:
+            contacts = self.query("SELECT * FROM contacts", include_column_names=True)
+            self.query("DROP TABLE contacts")
+            self.query('CREATE TABLE IF NOT EXISTS contacts (first_name TEXT, middle_name TEXT, last_name TEXT, email TEXT, title TEXT, region TEXT, country TEXT, city TEXT, phone TEXT, notes TEXT, module TEXT)')
+            for contact in contacts:
+                del contact["module"]
+                self.insert_contacts(**contact)
+            self.query('PRAGMA user_version = 18')
+
         if db_orig != db_version(self):
             self._console.alert(f"Database upgraded to version {db_version(self)}.")
 
@@ -775,14 +793,14 @@ class WorkspaceDB(ReconNGXDatabase):
         self.query('CREATE TABLE IF NOT EXISTS vulnerabilities (host TEXT, reference TEXT, example TEXT, publish_date TEXT, category TEXT, status TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS ports (ip_address TEXT, host TEXT, port TEXT, protocol TEXT, banner TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS hosts (host TEXT, ip_address TEXT, region TEXT, country TEXT, city TEXT, latitude TEXT, longitude TEXT, notes TEXT, module TEXT)')
-        self.query('CREATE TABLE IF NOT EXISTS contacts (first_name TEXT, middle_name TEXT, last_name TEXT, email TEXT, title TEXT, region TEXT, country TEXT, phone TEXT, notes TEXT, module TEXT)')
+        self.query('CREATE TABLE IF NOT EXISTS contacts (first_name TEXT, middle_name TEXT, last_name TEXT, email TEXT, title TEXT, region TEXT, country TEXT, city TEXT, phone TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS credentials (username TEXT, password TEXT, hash TEXT, type TEXT, leak TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS leaks (leak_id TEXT, description TEXT, source_refs TEXT, leak_type TEXT, title TEXT, import_date TEXT, leak_date TEXT, attackers TEXT, num_entries TEXT, score TEXT, num_domains_affected TEXT, attack_method TEXT, target_industries TEXT, password_hash TEXT, password_type TEXT, targets TEXT, media_refs TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS pushpins (source TEXT, screen_name TEXT, profile_name TEXT, profile_url TEXT, media_url TEXT, thumb_url TEXT, message TEXT, latitude TEXT, longitude TEXT, time TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS profiles (username TEXT, resource TEXT, url TEXT, category TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS repositories (name TEXT, owner TEXT, description TEXT, resource TEXT, category TEXT, url TEXT, notes TEXT, module TEXT)')
         self.query('CREATE TABLE IF NOT EXISTS dashboard (module TEXT PRIMARY KEY, runs INT)')
-        self.query('PRAGMA user_version = 12')
+        self.query('PRAGMA user_version = 18')
 
     def _display_insert_results(self, data, rowcount):
         '''
