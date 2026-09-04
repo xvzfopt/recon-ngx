@@ -558,7 +558,7 @@ class BaseModule:
         return self.__get_db().insert_hosts(host, ip_address, region, country, city, latitude, longitude, notes, mute)
 
     def insert_contacts(self, first_name=None, middle_name=None, last_name=None, email=None, title=None, region=None,
-                        country=None, phone=None, notes=None, mute=False):
+                        country=None, city=None, phone=None, notes=None, mute=False):
         '''
         Adds a contact to the Workspace Database
 
@@ -576,6 +576,8 @@ class BaseModule:
         :type region: str
         :param country: The country in which the contact is located
         :type country: str
+        :param city: The city in which the contact is located
+        :type city: str
         :param phone: The phone number of the contact
         :type phone: str
         :param notes: Any additional notes
@@ -584,7 +586,7 @@ class BaseModule:
         :type mute: bool
         '''
         return self.__get_db().insert_contacts(
-            first_name, middle_name, last_name, email, title, region, country, phone, notes, mute
+            first_name, middle_name, last_name, email, title, region, country, city, phone, notes, mute
         )
 
     def insert_credentials(self, username=None, password=None, _hash=None, _type=None, leak=None, notes=None,
