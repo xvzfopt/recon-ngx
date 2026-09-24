@@ -404,3 +404,12 @@ class ConsoleOutput:
         :type accessible: bool
         '''
         self._accessible = accessible
+
+    # =====================================================================================
+    # TEST/DEV ONLY
+    # =====================================================================================
+    def clear_output(self):
+        '''
+        Clears the console output history. Only currently intended for test/dev purposes
+        '''
+        self.__output = []
