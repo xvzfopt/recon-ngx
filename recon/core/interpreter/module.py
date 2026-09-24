@@ -187,7 +187,7 @@ class ModuleInterpreter(BaseInterpreter):
         option_name = option.upper()
         if option_name in options:
             options.reset_option(option_name)
-            workspace.set_config_property(option_name, options=options)
+            workspace.set_config_property(option_name, self._module.get_fqn(), options=options)
         else:
             self._console.error('Invalid option name.')
 
@@ -446,7 +446,7 @@ class ModuleInterpreter(BaseInterpreter):
         '''
         return [x for x in self._recon.get_options() if x.startswith(text.upper())]
     # Auto-complete goptions "unset" in same way as set
-    _complete_goptions_unset = _complete_goptions_set
+    _complete_goptions_unset = _complete_goptions_reset = _complete_goptions_set
 
     # =====================================================================================
     # Auto-completion Functions: options
@@ -463,7 +463,7 @@ class ModuleInterpreter(BaseInterpreter):
         '''
         return [x for x in self._module.get_options() if x.startswith(text.upper())]
     # Auto-complete options "unset" in same way as set
-    _complete_options_unset = _complete_options_set
+    _complete_options_unset = _complete_options_reset = _complete_options_set
 
     # =====================================================================================
     # Auto-completion functions: reload

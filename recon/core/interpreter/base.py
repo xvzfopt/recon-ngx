@@ -1085,7 +1085,7 @@ class BaseInterpreter(Cmd):
         '''
         return [x for x in self._recon.get_options() if x.startswith(text.upper())]
     # Auto-complete options "unset" in same way as set
-    _complete_options_unset = _complete_options_set
+    _complete_options_unset = _complete_options_reset = _complete_options_set
 
     # =====================================================================================
     # Auto-completion Functions: db
