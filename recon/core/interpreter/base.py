@@ -158,6 +158,7 @@ class BaseInterpreter(Cmd):
             return func(arg)
         except Exception:
             self._console.print_exception()
+            self._console.error("Something broken? See https://github.com/xvzfopt/recon-ngx/wiki/Troubleshooting#issue-reporting.")
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
         '''
@@ -1521,7 +1522,7 @@ class BaseInterpreter(Cmd):
         if options is None:
             options = self._recon.get_options()
 
-        # Copied across form recon-ng
+        # Copied across from recon-ng
         if options:
             pattern = f"{self.SPACER}%s  %s  %s  %s"
             key_len = len(max(options, key=len))
