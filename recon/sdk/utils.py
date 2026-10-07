@@ -11,6 +11,7 @@ import gzip
 import re
 import unicodedata
 from io import BytesIO
+from base64 import b64encode
 
 # =====================================================================================
 # Imports: Internal
@@ -109,3 +110,16 @@ def shodan_identify_protocol(host_data):
         protocol = "ssh"
 
     return protocol
+
+def create_basic_auth_token(username, password):
+    '''
+    Creates a HTTP Basic Auth Token for the specified username and password combination
+
+    :param username: The username
+    :type username: str
+    :param password: The password
+    :type password: str
+    '''
+    token = b64encode(f"{username}:{password}".encode()).decode()
+    return token
+
