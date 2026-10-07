@@ -150,7 +150,8 @@ class ReconNGXApp:
         module_config = self._workspace.get_module_config_data(module.get_fqn())
         module_options = module.get_options()
         for option_name in module_config:
-            module_options[option_name] = module_config[option_name]
+            if option_name in module_options: # Ignore options that might have been removed
+                module_options[option_name] = module_config[option_name]
 
         # Module Main
         while True:
