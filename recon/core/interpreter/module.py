@@ -14,6 +14,7 @@ import requests
 from .base import BaseInterpreter
 from recon.utils import validators
 from recon.core.exceptions import *
+from recon.sdk.exceptions import ModuleValidationException
 
 # =====================================================================================
 # Module Interpreter Class
@@ -337,7 +338,7 @@ class ModuleInterpreter(BaseInterpreter):
             self._console.print_exception()
             self._console.error('A request took too long to complete. If the issue persists, increase the global TIMEOUT option.')
         # Handler: Validation Exception
-        except validators.ValidationException:
+        except (validators.ValidationException, ModuleValidationException):
             self._console.print_exception()
         # Handler: Unexpected exceptions/errors
         except Exception:
