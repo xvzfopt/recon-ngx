@@ -9,6 +9,7 @@ Contains The BaseModule class that all Recon-NGX Modules should inherit from.
 # =====================================================================================
 import http.cookiejar
 import html
+import json
 import os.path
 import requests
 import inspect
@@ -246,6 +247,17 @@ class BaseModule:
         :type line: str
         '''
         self.__get_console().verbose(line)
+
+    def json_print(self, data, indent=2):
+        '''
+        Pretty-prints the provided data in JSON format
+
+        :param data: The data to pretty-print
+        :type data: dict
+        :param indent: The indentation to use. Defaults to 2
+        :type indent: int, Optional
+        '''
+        print(json.dumps(data, indent=indent))
 
     def read(self, prompt, default=None):
         '''
