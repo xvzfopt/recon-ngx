@@ -123,3 +123,22 @@ def create_basic_auth_token(username, password):
     token = b64encode(f"{username}:{password}".encode()).decode()
     return token
 
+def truncate_string(string, length=30):
+    '''
+    Truncates the target string to fit the specified length
+
+    :param string: The string to truncate
+    :type string: str
+    :param length: The length to truncate to
+    :type length: int
+    :returns: The truncated string, or the original string if it does not exceed the specified length
+    :rtype: str
+    '''
+    if len(string) <= length:
+        return string
+
+    return f"{string[:length - 3]}..."
+
+if __name__ == "__main__":
+    print(truncate_string("Hello world!"))
+    print(truncate_string("Hello world! This is a tester hehehe"))
